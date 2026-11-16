@@ -12,7 +12,7 @@ Clone the Gazette inside your ai-job-search folder (it finds the parent automati
 
 ```bash
 cd /path/to/ai-job-search
-git clone <this repo's URL> ui
+git clone https://github.com/vinayavc/ai-job-search-gazette.git ui
 echo "/ui/" >> .git/info/exclude
 cd ui && bun install && bun run dev
 ```
