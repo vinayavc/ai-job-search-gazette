@@ -125,6 +125,8 @@
 .gz-pipe-arrow { color: var(--gz-ink-soft); }
 .gz-toggle { display: flex; align-items: center; gap: 8px; margin: 18px 0 8px; font-size: 14px; cursor: pointer; }
 .gz-toggle input { accent-color: var(--gz-ink); width: 16px; height: 16px; }
+.gz-desk-note { font-size: 13px; font-style: italic; line-height: 1.5; margin: 4px 0 10px; }
+.gz-desk-note .gz-linkbtn { font-style: normal; }
 .gz-vignette { display: block; margin: 18px auto 0; color: var(--gz-ink); opacity: .9; }
 .gz-main { min-width: 0; }
 .gz-gutter-dog { display: flex; justify-content: flex-end; margin: 4px 0 -6px; color: var(--gz-ink); }

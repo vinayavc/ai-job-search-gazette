@@ -98,8 +98,11 @@ export function Ad({ job, circled, inkIndex, onToggle, onOpen, registerRef }: Ad
         <span className="gz-ad-stamps">
           {vetoed ? (
             <span className="gz-stamp gz-stamp-soft">NOT FOR YOU</span>
+          ) : job.rankScore !== null ? (
+            <span className="gz-stamp">FIT {job.rankScore}</span>
           ) : (
-            <span className="gz-stamp">{job.rankScore !== null ? `FIT ${job.rankScore}` : "UNRANKED"}</span>
+            // /rank never scores jobs already in the tracker, so those carry only their paw stamp.
+            !job.application && <span className="gz-stamp gz-stamp-soft">WAITING FOR THE DESK</span>
           )}
           {job.flagged && !vetoed && <span className="gz-readclosely">read closely</span>}
           {job.application && (

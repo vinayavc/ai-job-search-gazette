@@ -53,6 +53,8 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
   const rest = printed.filter((j) => !j.isFresh);
   const circled = useMemo(() => new Set(state?.circled ?? []), [state?.circled]);
   const circledJobs = jobs.filter((j) => circled.has(j.key));
+  // Ads /rank will still score: unscored, not vetoed, and not already in the tracker.
+  const waiting = printed.filter((j) => j.rankScore === null && !j.vetoed && !j.application).length;
   const openJob = openKey ? jobs.find((j) => j.key === openKey) ?? null : null;
 
   const toggle = useCallback((key: string) => {
@@ -169,6 +171,17 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
                   />
                   <span>Auto-rank after fetching</span>
                 </label>
+
+                {waiting > 0 && (
+                  <p className="gz-desk-note">
+                    {waiting === 1 ? "One ad is" : `${waiting} ads are`} waiting for the ranking desk, which reads ten at a time.{" "}
+                    {!active && (
+                      <button type="button" className="gz-linkbtn" onClick={() => onStart("rank")}>
+                        Send the next batch
+                      </button>
+                    )}
+                  </p>
+                )}
 
                 <DachshundStretch size={140} className="gz-vignette" />
               </aside>
