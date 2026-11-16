@@ -1,0 +1,5 @@
+:root { --paper: #f3ead6; --ink: #2a2620; --marker: #c0392b; --mint: #9ccfc4; --cream: #e9e3d3; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #7fb8ac; color: var(--ink); font-family: "Old Standard TT", Georgia, serif; }
+button { font-family: inherit; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }

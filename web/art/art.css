@@ -1,0 +1,24 @@
+/* Animations for the dachshund line art. Legs swing about their hips (top-centre of the leg box). */
+.dk-art { overflow: visible; display: inline-block; }
+.dk-art .dk-leg-a, .dk-art .dk-leg-b, .dk-art .dk-tap-a, .dk-art .dk-tap-b, .dk-art .dk-ear {
+  transform-box: fill-box; transform-origin: 30% 0%;
+}
+.dk-run .dk-leg-a { animation: dk-swing 0.42s ease-in-out infinite alternate; }
+.dk-run .dk-leg-b { animation: dk-swing 0.42s ease-in-out infinite alternate-reverse; }
+.dk-run .dk-bob { animation: dk-bob 0.21s ease-in-out infinite alternate; }
+.dk-run .dk-ear { animation: dk-flap 0.42s ease-in-out infinite alternate; }
+.dk-run .dk-tail { animation: dk-bob 0.21s ease-in-out infinite alternate-reverse; }
+.dk-tap-a { animation: dk-tap 0.9s ease-in-out infinite; }
+.dk-tap-b { animation: dk-tap 0.9s ease-in-out 0.45s infinite; }
+@keyframes dk-swing { from { transform: rotate(-28deg); } to { transform: rotate(28deg); } }
+@keyframes dk-bob { from { transform: translateY(0); } to { transform: translateY(-1.6px); } }
+@keyframes dk-flap { from { transform: rotate(-6deg); } to { transform: rotate(10deg); } }
+@keyframes dk-tap { 0%, 60%, 100% { transform: rotate(0deg); } 30% { transform: rotate(-7deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .dk-art * { animation: none !important; }
+}
+.dk-perk { animation: dk-perk 3.2s ease-in-out infinite; }
+.dk-wag { transform-box: fill-box; transform-origin: 100% 30%; animation: dk-wag 0.5s ease-in-out infinite alternate; }
+@keyframes dk-perk { 0%, 70%, 100% { transform: rotate(0deg); } 80% { transform: rotate(-10deg); } 90% { transform: rotate(-4deg); } }
+@keyframes dk-wag { from { transform: rotate(-6deg); } to { transform: rotate(8deg); } }
+@media (prefers-reduced-motion: reduce) { .dk-art .dk-perk, .dk-art .dk-wag { animation: none !important; } }

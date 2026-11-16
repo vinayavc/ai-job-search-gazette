@@ -1,0 +1,225 @@
+/* The diner banner. Flat layers, no gradients except the checkered floor. Height 200px. */
+.diner {
+  --wall: #9ccfc4; --wall-dark: #86bdb1; --cream: #e9e3d3; --red: #c0392b; --ink: #2a2620; --paper: #f3ead6;
+  --floor-h: 46px;
+  position: relative; height: 200px; overflow: hidden;
+  background: var(--wall); color: var(--ink);
+  border: 2px solid var(--ink); border-radius: 6px 6px 0 0;
+  font-family: "Old Standard TT", Georgia, serif;
+  isolation: isolate;
+}
+.diner .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.diner-trim { position: absolute; inset: 0 0 auto 0; height: 9px; background: var(--cream); border-bottom: 2px solid var(--ink); }
+.diner-trim::after { content: ""; position: absolute; left: 0; right: 0; top: 3px; height: 2px; background: var(--red); }
+
+/* window onto the street */
+.diner-window {
+  position: absolute; left: 40%; width: 27%; top: 24px; height: 84px;
+  background: var(--cream); border: 2px solid var(--ink); border-radius: 4px; padding: 5px; overflow: hidden;
+}
+.diner-window .street { display: block; width: 100%; height: 100%; border: 1.5px solid var(--ink); }
+.diner-window::after { /* mullion */
+  content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 5px; margin-left: -2.5px;
+  background: var(--cream); border-left: 1.5px solid var(--ink); border-right: 1.5px solid var(--ink);
+}
+.street-car { animation: car-pass 31s linear infinite; }
+.street-bird { animation: bird-pass 23s linear 4s infinite; }
+@keyframes car-pass { 0%, 62% { transform: translateX(-30px); } 100% { transform: translateX(230px); } }
+@keyframes bird-pass {
+  0%, 70% { transform: translate(-20px, 18px); }
+  85% { transform: translate(100px, 10px); }
+  100% { transform: translate(220px, 14px); }
+}
+.open-sign {
+  position: absolute; z-index: 2; top: 9px; left: 8px; transform: rotate(-3deg);
+  background: var(--paper); border: 1.5px solid var(--ink); border-radius: 3px; padding: 1px 5px 2px;
+  display: flex; flex-direction: column; align-items: center; line-height: 1;
+  font-family: "Special Elite", monospace;
+}
+.open-sign b { color: var(--red); font-size: 12px; letter-spacing: 1px; }
+.open-sign span { font-size: 8px; margin-top: 1px; }
+
+/* the door, right edge; hinge on its right side so it swings toward the street */
+.diner-door {
+  position: absolute; right: 1.5%; width: 13%; min-width: 50px; max-width: 92px;
+  top: 30px; bottom: var(--floor-h);
+  border: 3px solid var(--ink); border-bottom: 0; background: var(--cream); padding: 4px 4px 0;
+  perspective: 300px; z-index: 1;
+}
+.door-outside { position: absolute; inset: 4px 4px 0; background: #d9ece6; }
+.door-panel {
+  position: absolute; inset: 4px 4px 0; background: var(--red); border: 2px solid var(--ink); border-bottom: 0;
+  transform-origin: 100% 50%; transition: transform 0.55s ease-in-out;
+}
+.diner-door.is-open .door-panel { transform: rotateY(-72deg); }
+.door-port {
+  position: absolute; left: 50%; top: 14%; width: 46%; aspect-ratio: 1; transform: translateX(-50%);
+  border-radius: 50%; background: #d9ece6; border: 2px solid var(--ink);
+}
+.door-knob { position: absolute; left: 10%; top: 56%; width: 6px; height: 6px; border-radius: 50%; background: var(--cream); border: 1.5px solid var(--ink); }
+
+/* chalkboard by the door */
+.chalkboard {
+  position: absolute; z-index: 2; right: calc(1.5% + clamp(54px, 13%, 96px) + 10px); top: 26px;
+  width: clamp(88px, 15%, 170px); min-height: 54px; padding: 5px 7px 6px;
+  background: #33433e; color: #f3ead6; border: 4px solid #a7794a; border-radius: 3px;
+  box-shadow: 0 0 0 1.5px var(--ink);
+  font-family: "Caveat", cursive; line-height: 1.05; transform: rotate(1.5deg);
+}
+.chalkboard b { display: block; font-size: 15px; font-weight: 500; color: #f6d77a; }
+.chalkboard span {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  font-size: 14px; overflow-wrap: anywhere;
+}
+
+/* paper-tag "Fetch" button */
+.fetch-tag {
+  position: absolute; z-index: 3; left: 2.5%; top: 18px; max-width: 34%;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 7px 14px 8px 26px; cursor: pointer;
+  font-family: "Special Elite", monospace; font-size: 15px; line-height: 1.15; text-align: left; color: var(--ink);
+  background: var(--paper); border: 2px solid var(--ink);
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  transform: rotate(-2.5deg); transition: transform 0.2s ease, background 0.2s ease;
+}
+.fetch-tag small { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--red); }
+.fetch-tag .tag-hole { position: absolute; left: 10px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--wall); }
+.fetch-tag:hover:not(:disabled) { transform: rotate(-1deg) translateY(-1px); background: #fbf3e2; }
+.fetch-tag:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.fetch-tag:disabled { cursor: default; opacity: 0.75; }
+
+/* counter, mug, radio */
+.counter { position: absolute; left: 0; width: 31%; top: 112px; bottom: var(--floor-h); }
+.counter-top { height: 9px; background: var(--cream); border: 2px solid var(--ink); border-left: 0; }
+.counter-front {
+  position: absolute; top: 9px; bottom: 0; left: 0; right: 0; background: var(--wall-dark);
+  border-right: 2px solid var(--ink); border-top: 6px solid var(--red);
+  background-image: repeating-linear-gradient(90deg, transparent 0 22px, rgba(42, 38, 32, 0.25) 22px 24px);
+}
+.mug { position: absolute; z-index: 2; left: 3%; top: 86px; }
+.mug svg { display: block; }
+.steam { position: absolute; left: 4px; bottom: 24px; width: 20px; height: 26px; }
+.steam i {
+  position: absolute; bottom: 0; width: 3px; height: 14px; border-radius: 3px;
+  border-left: 2px solid rgba(243, 234, 214, 0.95); opacity: 0;
+  animation: steam 3.6s ease-out infinite;
+}
+.steam i:nth-child(1) { left: 3px; }
+.steam i:nth-child(2) { left: 9px; animation-delay: 1.2s; }
+.steam i:nth-child(3) { left: 15px; animation-delay: 2.4s; }
+@keyframes steam {
+  0% { transform: translateY(4px) scaleY(0.6); opacity: 0; }
+  30% { opacity: 0.9; }
+  100% { transform: translate(3px, -16px) skewX(-12deg) scaleY(1.1); opacity: 0; }
+}
+
+.radio { position: absolute; z-index: 5; left: 15%; top: 78px; width: 58px; }
+.radio-set { all: unset; display: block; width: 100%; cursor: pointer; position: relative; }
+.radio-set:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; border-radius: 6px; }
+.radio-set:hover svg { transform: rotate(-2deg); }
+.radio-set svg { display: block; transition: transform 0.2s; }
+.radio-notes { position: absolute; left: 30%; top: -6px; pointer-events: none; }
+.radio-notes i { position: absolute; font-style: normal; font-size: 12px; opacity: 0; color: var(--ink); }
+.radio.is-live .radio-notes i { animation: note 4.5s ease-out infinite; }
+.radio.is-live .radio-notes i:nth-child(2) { left: 10px; animation-delay: 1.5s; }
+.radio.is-live .radio-notes i:nth-child(3) { left: 20px; animation-delay: 3s; }
+@keyframes note { 0% { transform: translateY(0); opacity: 0; } 25% { opacity: 0.8; } 100% { transform: translate(6px, -26px) rotate(12deg); opacity: 0; } }
+.radio-dial {
+  position: absolute; z-index: 6; left: calc(100% + 8px); top: -62px; width: 176px; padding: 7px 9px 9px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 4px; box-shadow: 3px 3px 0 var(--ink);
+  font-family: "Special Elite", monospace; font-size: 12px; display: grid; gap: 7px;
+}
+.radio-call { font-weight: 700; display: flex; flex-direction: column; }
+.radio-call small { font-weight: 400; font-size: 11px; color: #6b6255; }
+.radio-dial button {
+  font-family: inherit; font-size: 12px; cursor: pointer; color: var(--ink);
+  background: var(--cream); border: 1.5px solid var(--ink); border-radius: 3px; padding: 3px 6px;
+}
+.radio-dial button:focus-visible, .radio-vol input:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.radio-power.on { background: var(--red); color: var(--paper); }
+.radio-stations { display: flex; gap: 4px; }
+.radio-stations button { flex: 1; white-space: nowrap; padding: 3px 2px; }
+.radio-stations button.sel { background: var(--ink); color: var(--paper); }
+.radio-vol { display: grid; gap: 2px; }
+.radio-vol input { width: 100%; accent-color: var(--red); }
+
+/* while the dog types on the counter, the mug is cleared away and the radio slides along */
+.mug, .radio { transition: opacity 0.4s ease, left 0.6s ease; }
+.diner.is-typing .mug { opacity: 0; }
+.diner.is-typing .radio { left: calc(31% - 64px); }
+@media (max-width: 480px) { .diner.is-typing .radio { left: calc(36% - 54px); } }
+
+/* floor and table */
+.floor {
+  position: absolute; left: 0; right: 0; bottom: 0; height: var(--floor-h);
+  border-top: 2px solid var(--ink);
+  background-color: var(--cream);
+  background-image: conic-gradient(#5a544b 25%, transparent 0 50%, #5a544b 0 75%, transparent 0);
+  background-size: 22px 22px;
+}
+.table { position: absolute; left: 33%; width: clamp(110px, 19%, 200px); top: 124px; bottom: 4px; z-index: 3; pointer-events: none; }
+.table-top { position: absolute; left: 0; right: 0; top: 0; height: 9px; background: var(--cream); border: 2px solid var(--ink); border-bottom: 5px solid var(--red); border-radius: 3px; }
+.rug {
+  position: absolute; z-index: 1; left: calc(33% - 10px); width: calc(clamp(110px, 19%, 200px) + 20px); bottom: 3px; height: 18px;
+  border-radius: 50%; background: var(--red); border: 2px solid var(--ink);
+  box-shadow: inset 0 0 0 3px var(--red), inset 0 0 0 5px var(--cream);
+}
+.table-leg { position: absolute; top: 12px; bottom: 0; width: 5px; background: #c9cfcc; border: 1.5px solid var(--ink); }
+.table-leg.l { left: 8px; }
+.table-leg.r { right: 8px; }
+
+/* the dog */
+.dog {
+  position: absolute; z-index: 4; bottom: 6px; color: var(--ink); --art-fill: var(--paper);
+  transition-property: left, opacity; transition-timing-function: linear, ease;
+  opacity: 1;
+}
+.dog.is-hidden { opacity: 0; }
+.dog-flip { transition: transform 0.25s ease; transform-origin: 50% 50%; }
+.dog-art { display: block; }
+.dog.pose-sleep { z-index: 2; bottom: 4px; }
+.dog.pose-sleep .dog-art { transform-origin: 50% 100%; animation: breathe 4.2s ease-in-out infinite; }
+.dog.pose-lie .dog-art { transform: scaleY(0.97); transform-origin: 50% 100%; }
+.dog.pose-type { bottom: calc(200px - 112px - 2px); z-index: 4; }
+.dog.pose-sit { bottom: 4px; }
+.dog.pose-stand .dog-art, .dog.pose-run .dog-art { margin-bottom: 1px; }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02, 1.025); } }
+.zzz { position: absolute; left: 6px; top: -8px; font-family: "Caveat", cursive; color: var(--ink); pointer-events: none; }
+.zzz i { position: absolute; font-style: normal; font-size: 13px; opacity: 0; animation: zz 4.2s ease-out infinite; }
+.zzz i:nth-child(2) { animation-delay: 1.4s; font-size: 11px; }
+.zzz i:nth-child(3) { animation-delay: 2.8s; font-size: 9px; }
+@keyframes zz { 0% { transform: translate(0, 0); opacity: 0; } 30% { opacity: 0.85; } 100% { transform: translate(-10px, -22px); opacity: 0; } }
+
+.dropped-paper { position: absolute; z-index: 3; left: calc(58% - 34px); bottom: 6px; animation: paper-drop 0.5s ease-out both; }
+@keyframes paper-drop {
+  0% { transform: translateY(-14px) rotate(-12deg); }
+  60% { transform: translateY(0) rotate(3deg); }
+  80% { transform: translateY(-3px) rotate(0deg); }
+  100% { transform: translateY(0); }
+}
+
+/* narrow screens: tuck things in */
+@media (max-width: 720px) {
+  .diner-window { left: 37%; width: 24%; }
+  .fetch-tag { font-size: 13px; padding: 6px 10px 7px 24px; max-width: 42%; }
+  .chalkboard b { font-size: 13px; }
+  .chalkboard span { font-size: 12px; }
+  .table { left: 30%; }
+  .rug { left: calc(30% - 10px); }
+}
+@media (max-width: 480px) {
+  .diner-window { display: none; }
+  .counter { width: 36%; }
+  .radio { left: 19%; width: 50px; }
+  .chalkboard { width: 30%; }
+  .dog-art { width: 84px; }
+  .dog.pose-sit .dog-art { width: 58px; }
+  .dog.pose-type .dog-art { width: 70px; }
+  .dropped-paper { left: calc(58% - 30px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diner *, .diner *::before, .diner *::after { animation: none !important; transition: none !important; }
+  .steam i { opacity: 0.6; }
+}
