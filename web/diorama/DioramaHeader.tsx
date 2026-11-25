@@ -11,7 +11,7 @@ import * as THREE from "three";
 import type { RunView } from "../App";
 import type { UiState } from "../../contract/types";
 import { Radio } from "../diner/Radio";
-import "../diner/diner.css";
+import "../diner/radio.css";
 import "./diorama.css";
 
 type Beat = { t0: number; t1: number; tag: string; text: string };

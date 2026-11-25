@@ -1,0 +1,48 @@
+/* The menu tag ("Fetch today's edition") and the KDOX 87.9 radio that sit on the diorama header. */
+.dio { --wall: #9ccfc4; --cream: #e9e3d3; --red: #c0392b; --ink: #2a2620; --paper: #f3ead6; }
+/* paper-tag "Fetch" button */
+.fetch-tag {
+  position: absolute; z-index: 3; left: 2.5%; top: 18px; max-width: 34%;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 7px 14px 8px 26px; cursor: pointer;
+  font-family: "Special Elite", monospace; font-size: 15px; line-height: 1.15; text-align: left; color: var(--ink);
+  background: var(--paper); border: 2px solid var(--ink);
+  clip-path: polygon(14px 0, 100% 0, 100% 100%, 14px 100%, 0 50%);
+  transform: rotate(-2.5deg); transition: transform 0.2s ease, background 0.2s ease;
+}
+.fetch-tag small { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--red); }
+.fetch-tag .tag-hole { position: absolute; left: 10px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; border: 1.5px solid var(--ink); background: var(--wall); }
+.fetch-tag:hover:not(:disabled) { transform: rotate(-1deg) translateY(-1px); background: #fbf3e2; }
+.fetch-tag:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+.fetch-tag:disabled { cursor: default; opacity: 0.75; }
+
+.radio { position: absolute; z-index: 5; left: 15%; top: 78px; width: 58px; }
+.radio-set { all: unset; display: block; width: 100%; cursor: pointer; position: relative; }
+.radio-set:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; border-radius: 6px; }
+.radio-set:hover svg { transform: rotate(-2deg); }
+.radio-set svg { display: block; transition: transform 0.2s; }
+.radio-notes { position: absolute; left: 30%; top: -6px; pointer-events: none; }
+.radio-notes i { position: absolute; font-style: normal; font-size: 12px; opacity: 0; color: var(--ink); }
+.radio.is-live .radio-notes i { animation: note 4.5s ease-out infinite; }
+.radio.is-live .radio-notes i:nth-child(2) { left: 10px; animation-delay: 1.5s; }
+.radio.is-live .radio-notes i:nth-child(3) { left: 20px; animation-delay: 3s; }
+@keyframes note { 0% { transform: translateY(0); opacity: 0; } 25% { opacity: 0.8; } 100% { transform: translate(6px, -26px) rotate(12deg); opacity: 0; } }
+.radio-dial {
+  position: absolute; z-index: 6; left: calc(100% + 8px); top: -62px; width: 176px; padding: 7px 9px 9px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 4px; box-shadow: 3px 3px 0 var(--ink);
+  font-family: "Special Elite", monospace; font-size: 12px; display: grid; gap: 7px;
+}
+.radio-call { font-weight: 700; display: flex; flex-direction: column; }
+.radio-call small { font-weight: 400; font-size: 11px; color: #6b6255; }
+.radio-dial button {
+  font-family: inherit; font-size: 12px; cursor: pointer; color: var(--ink);
+  background: var(--cream); border: 1.5px solid var(--ink); border-radius: 3px; padding: 3px 6px;
+}
+.radio-dial button:focus-visible, .radio-vol input:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.radio-power.on { background: var(--red); color: var(--paper); }
+.radio-stations { display: flex; gap: 4px; }
+.radio-stations button { flex: 1; white-space: nowrap; padding: 3px 2px; }
+.radio-stations button.sel { background: var(--ink); color: var(--paper); }
+.radio-vol { display: grid; gap: 2px; }
+.radio-vol input { width: 100%; accent-color: var(--red); }
+
