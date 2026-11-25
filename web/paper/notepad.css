@@ -64,3 +64,10 @@
   .np-wrap.is-open { transform: translateX(-16px); }
   .np-pad { max-height: 60vh; transform: none; }
 }
+
+/* phones: a short sheet along the bottom that never covers the town at the top */
+@media (max-width: 720px) {
+  .np-wrap { left: 6px; right: 6px; bottom: 6px; width: auto; transform: translateY(calc(100% + 24px)); }
+  .np-wrap.is-open { transform: none; }
+  .np-pad { max-height: 38vh; overflow-y: auto; transform: none; }
+}

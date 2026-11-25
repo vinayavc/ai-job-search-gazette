@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Edition, UiState, Run, RunEvent, AskQuestion, Command } from "../contract/types";
 import { api, subscribeRun } from "./api";
-import { DinerScene } from "./diner/DinerScene";
+import { DioramaHeader } from "./diorama/DioramaHeader";
+import { DogNameContext } from "./paper/dogName";
 import { Newspaper } from "./paper/Newspaper";
 import { Notepad } from "./paper/Notepad";
 
@@ -21,6 +22,7 @@ export function App() {
   const [state, setState] = useState<UiState | null>(null);
   const [view, setView] = useState<RunView>(EMPTY);
   const [error, setError] = useState<string | null>(null);
+  const [sentAt, setSentAt] = useState<number | null>(null);   // "Posted it?" answered yes -> the header plays the handover
   const unsub = useRef<null | (() => void)>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -91,9 +93,12 @@ export function App() {
   const cancel = useCallback(() => { if (view.run) api.cancel(view.run.id).catch(() => {}); }, [view.run]);
 
   return (
-    <main style={{ maxWidth: 1180, margin: "0 auto", padding: "16px" }}>
-      <DinerScene
+    <DogNameContext.Provider value={state?.dogName ?? "Doxie"}>
+    <main className="gz-app">
+      <DioramaHeader
         view={view}
+        drafts={edition?.applications.filter((a) => a.status === "drafted").length ?? 0}
+        sentAt={sentAt}
         onFetch={() => start("scrape")}
         radio={state?.radio ?? { station: "jazz", volume: 0.4, on: false }}
         onRadioChange={(radio) => patchState({ radio })}
@@ -106,9 +111,10 @@ export function App() {
         onStart={start}
         onCancel={cancel}
         onPatchState={patchState}
-        onMarkSent={(jobKey) => api.markSent(jobKey).then(reload).catch((e) => setError(String(e.message)))}
+        onMarkSent={(jobKey) => api.markSent(jobKey).then(() => { setSentAt(Date.now()); return reload(); }).catch((e) => setError(String(e.message)))}
       />
       <Notepad view={view} onAnswer={answer} onCancel={cancel} />
     </main>
+    </DogNameContext.Provider>
   );
 }

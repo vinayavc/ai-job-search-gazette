@@ -1,4 +1,5 @@
-// The waiter's order pad: slides in from the right while Doxie runs an errand or has a question.
+// The waiter's order pad: slides in from the right while the dog runs an errand or has a question.
+import { useDogName } from "./dogName";
 import { useMemo, useState, type FormEvent } from "react";
 import type { RunView } from "../App";
 import type { AskQuestion } from "../../contract/types";
@@ -10,6 +11,7 @@ export interface NotepadProps { view: RunView; onAnswer: (answers: Record<string
 const OTHER = "__other__";
 
 function QuestionForm({ questions, onAnswer }: { questions: AskQuestion[]; onAnswer: NotepadProps["onAnswer"] }) {
+  const dog = useDogName();
   const [picked, setPicked] = useState<Record<number, string[]>>({});
   const [other, setOther] = useState<Record<number, string>>({});
   const [missing, setMissing] = useState<number[]>([]);
@@ -83,12 +85,13 @@ function QuestionForm({ questions, onAnswer }: { questions: AskQuestion[]; onAns
           </fieldset>
         );
       })}
-      <button type="submit" className="np-btn">Hand it to Doxie</button>
+      <button type="submit" className="np-btn">Hand it to {dog}</button>
     </form>
   );
 }
 
 export function Notepad({ view, onAnswer, onCancel }: NotepadProps) {
+  const dog = useDogName();
   const { run, question, log } = view;
   const active = isActive(run);
   const finished = isFinished(run);
@@ -113,8 +116,8 @@ export function Notepad({ view, onAnswer, onCancel }: NotepadProps) {
         {run.args && <p className="np-args">{run.args}</p>}
 
         {question ? (
-          <div role="group" aria-label="Doxie has a question">
-            <p className="np-ask">Doxie has a question for you:</p>
+          <div role="group" aria-label={`${dog} has a question`}>
+            <p className="np-ask">{dog} has a question for you:</p>
             <QuestionForm key={question.questionId} questions={question.questions} onAnswer={onAnswer} />
           </div>
         ) : (
@@ -137,7 +140,7 @@ export function Notepad({ view, onAnswer, onCancel }: NotepadProps) {
                 That didn't quite go to plan{run.error ? `: ${run.error}` : "."} You can try again whenever you like.
               </p>
             )}
-            <button type="button" className="np-btn" onClick={() => setDismissed(run.id)}>Tear off the page</button>
+            <button type="button" className="np-btn" onClick={() => setDismissed(run.id)}>Got it</button>
           </div>
         )}
 

@@ -1,5 +1,5 @@
 // The classifieds: two newspaper columns of ads, each circle-able with the red marker.
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import type { Job } from "../../contract/types";
 import { PawStamp, DachshundPeek } from "../art";
 import { adWeight, balanceColumns, handLoopPath, seeded, stampText } from "./util";
@@ -50,10 +50,12 @@ interface AdProps {
   inkIndex: number | null; // stagger index for fresh ads; null = no ink-in
   onToggle: () => void;
   onOpen: () => void;
+  onTailor?: () => void;         // shown on circled ads: tailor a CV and cover letter for this one
+  fresh?: boolean;               // came in with this morning's paper
   registerRef?: (el: HTMLButtonElement | null) => void;
 }
 
-export function Ad({ job, circled, inkIndex, onToggle, onOpen, registerRef }: AdProps) {
+export function Ad({ job, circled, inkIndex, onToggle, onOpen, onTailor, fresh, registerRef }: AdProps) {
   const clickTimer = useRef<number | null>(null);
   const vetoed = job.vetoed;
 
@@ -92,9 +94,11 @@ export function Ad({ job, circled, inkIndex, onToggle, onOpen, registerRef }: Ad
         onDoubleClick={handleDouble}
         onKeyDown={handleKey}
       >
-        <span className="gz-ad-title">{job.title}</span>
+        <span className="gz-ad-title">{fresh && <span className="gz-new">New</span>}{job.title}</span>
         {meta && <span className="gz-ad-meta">{meta}</span>}
         {job.strengths[0] && !vetoed && <span className="gz-ad-strength">{job.strengths[0]}</span>}
+      </button>
+      <div className="gz-ad-actions">
         <span className="gz-ad-stamps">
           {vetoed ? (
             <span className="gz-stamp gz-stamp-soft">NOT FOR YOU</span>
@@ -107,14 +111,19 @@ export function Ad({ job, circled, inkIndex, onToggle, onOpen, registerRef }: Ad
           {job.flagged && !vetoed && <span className="gz-readclosely">read closely</span>}
           {job.application && (
             <span className="gz-paw" title={stampText(job.application)}>
-              <PawStamp size={64} text={stampText(job.application)} />
+              <PawStamp size={44} text={stampText(job.application)} />
             </span>
           )}
         </span>
-      </button>
-      <button type="button" className="gz-linkbtn gz-ad-read" onClick={onOpen} aria-label={`Read the ad: ${job.title} at ${job.company}`}>
-        Read
-      </button>
+        <button type="button" className="gz-linkbtn gz-ad-read" onClick={onOpen} aria-label={`Read the ad: ${job.title} at ${job.company}`}>
+          Read
+        </button>
+        {circled && !vetoed && onTailor && (
+          <button type="button" className="gz-btn gz-btn-small gz-ad-tailor" onClick={onTailor} aria-label={`Tailor my resume for ${job.title} at ${job.company}`}>
+            Tailor my resume
+          </button>
+        )}
+      </div>
       {circled && !vetoed && <MarkerCircle seed={job.key} />}
     </div>
   );
@@ -185,5 +194,109 @@ export function Classifieds({ fresh, rest, circled, inkIn, onToggle, onOpen, reg
         </>
       )}
     </section>
+  );
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// One newspaper page at a time. Ads are measured at the real column width and packed into one or two
+// columns that exactly fit the page, so a page never scrolls; you flip pages like a real paper.
+
+interface PagesProps {
+  jobs: Job[];                       // fresh ads first
+  freshKeys: Set<string>;
+  circled: Set<string>;
+  inkIn: boolean;
+  onToggle: (key: string) => void;
+  onOpen: (key: string) => void;
+  onTailor: (job: Job) => void;
+  registerRef: (key: string, el: HTMLButtonElement | null) => void;
+  tail?: { label: string; node: ReactNode };   // an extra last page (letters to the editor)
+}
+
+export function ClassifiedPages({ jobs, freshKeys, circled, inkIn, onToggle, onOpen, onTailor, registerRef, tail }: PagesProps) {
+  const area = useRef<HTMLDivElement>(null);
+  const meas = useRef<HTMLDivElement>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const [pages, setPages] = useState<Job[][][]>([]);
+  const [page, setPage] = useState(0);
+  const [dir, setDir] = useState<1 | -1>(1);
+  const cols = size.w >= 620 ? 2 : 1;
+  const colW = cols === 2 ? Math.floor((size.w - 1) / 2) : size.w;
+
+  useLayoutEffect(() => {
+    const el = area.current; if (!el) return;
+    const ro = new ResizeObserver(() => setSize((s) => (s.w === el.clientWidth && s.h === el.clientHeight ? s : { w: el.clientWidth, h: el.clientHeight })));
+    ro.observe(el); return () => ro.disconnect();
+  }, []);
+
+  // Pack ads into pages using their measured heights (the hidden copy below renders them at column width).
+  useLayoutEffect(() => {
+    const m = meas.current; if (!m || !size.h) return;
+    const hs = [...m.children].map((c) => { const st = getComputedStyle(c); return c.getBoundingClientRect().height + parseFloat(st.marginBottom || "0"); });
+    const out: Job[][][] = []; let cur: Job[][] = [[]]; let used = 0;
+    jobs.forEach((j, i) => {
+      const h = hs[i] ?? 120;
+      if (used + h > size.h && cur[cur.length - 1].length) {
+        if (cur.length < cols) { cur.push([]); } else { out.push(cur); cur = [[]]; }
+        used = 0;
+      }
+      cur[cur.length - 1].push(j); used += h;
+    });
+    if (cur[0].length) out.push(cur);
+    setPages(out);
+  }, [jobs, circled, size, cols]);
+
+  const total = pages.length + (tail ? 1 : 0);
+  useEffect(() => { if (total && page > total - 1) setPage(total - 1); }, [total, page]);
+  const go = useCallback((d: 1 | -1) => setPage((p) => { const n = Math.min(Math.max(p + d, 0), Math.max(total - 1, 0)); if (n !== p) setDir(d); return n; }), [total]);
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+      if (e.key === "ArrowRight") go(1); else if (e.key === "ArrowLeft") go(-1);
+    };
+    window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
+  }, [go]);
+
+  const swipe = useRef<number | null>(null);   // swipe left/right on a phone to turn the page
+  const isTail = !!tail && page === pages.length;
+  const sheet = pages[page];
+  const renderAd = (j: Job, i: number) => (
+    <Ad key={j.key} job={j} circled={circled.has(j.key)} fresh={freshKeys.has(j.key)}
+      inkIndex={inkIn && page === 0 && freshKeys.has(j.key) ? i : null}
+      onToggle={() => onToggle(j.key)} onOpen={() => onOpen(j.key)} onTailor={() => onTailor(j)}
+      registerRef={(el) => registerRef(j.key, el)} />
+  );
+
+  return (
+    <div className="gz-pager-wrap">
+      <div className="gz-pages-area" ref={area}
+        onTouchStart={(e) => { swipe.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => { const x0 = swipe.current; swipe.current = null; if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); }}>
+        <div className="gz-measure" ref={meas} aria-hidden="true" {...{ inert: "" }} style={{ width: colW }}>
+          {size.h > 0 && jobs.map((j) => <Ad key={j.key} job={j} circled={circled.has(j.key)} fresh={freshKeys.has(j.key)} inkIndex={null} onToggle={() => {}} onOpen={() => {}} onTailor={() => {}} />)}
+        </div>
+        {jobs.length === 0 && !tail ? (
+          <div className="gz-empty"><DachshundPeek size={110} /><p>No ads yet. Send the mail van for today's paper.</p></div>
+        ) : (
+          <div key={page} className={`gz-sheet ${dir > 0 ? "flip-next" : "flip-prev"}${isTail ? " is-tail" : ""}`}>
+            {isTail ? tail!.node : sheet ? (
+              <div className="gz-cols">
+                {sheet.map((col, ci) => <div className="gz-col" key={ci}>{col.map((j, i) => renderAd(j, ci * 20 + i))}</div>)}
+              </div>
+            ) : null}
+          </div>
+        )}
+      </div>
+      {total > 1 && (
+        <nav className="gz-pager" aria-label="Turn the page">
+          <button type="button" className="gz-linkbtn" onClick={() => go(-1)} disabled={page === 0}>&lsaquo; Previous page</button>
+          <span className="gz-pager-n">{isTail ? tail!.label : `Page ${page + 1} of ${total}`}</span>
+          <button type="button" className="gz-linkbtn" onClick={() => go(1)} disabled={page >= total - 1}>
+            {tail && page === pages.length - 1 ? `${tail.label} ›` : "Next page ›"}
+          </button>
+        </nav>
+      )}
+    </div>
   );
 }

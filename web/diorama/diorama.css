@@ -1,0 +1,36 @@
+/* The diorama header: a wide strip of the little town, with the menu tag, the radio and a caption on top. */
+.dio {
+  position: relative; border-radius: 14px; overflow: hidden; background: #b4d2de;
+  height: clamp(150px, 25vh, 270px); max-width: 100%; color: #2a2620;
+  font-family: "Old Standard TT", Georgia, serif;
+}
+.dio-canvas { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.6s ease; }
+.dio-canvas.is-ready { opacity: 1; }
+.dio-cut { position: absolute; inset: 0; pointer-events: none; background: #b4d2de; animation: dio-cut 0.45s ease-out forwards; }
+@keyframes dio-cut { from { opacity: 0.85; } to { opacity: 0; } }
+.dio-loading { position: absolute; inset: 0; display: grid; place-items: center; font-style: italic; color: #3b4a55; }
+.dio .fetch-tag { top: 14px; left: 14px; }
+.dio-radio { position: absolute; top: 12px; right: 16px; width: 58px; }
+.dio-radio .radio { position: relative; left: auto; top: auto; }
+.dio-radio .radio-dial { left: auto; right: 0; top: calc(100% + 8px); }
+.dio-caption, .dio-note {
+  position: absolute; left: 14px; bottom: 14px; max-width: calc(100% - 28px);
+  background: rgba(251, 246, 236, 0.94); border-radius: 14px; padding: 8px 16px 10px;
+  font-family: "Fredoka", "Avenir Next", system-ui, sans-serif; display: grid; gap: 1px;
+}
+.dio-caption b { font-weight: 600; font-size: 12px; letter-spacing: 0.16em; color: #e9573f; }
+.dio-caption span { font-weight: 600; font-size: clamp(15px, 2vw, 22px); color: #2b2f3a; }
+.dio-note { font-size: 14px; font-weight: 500; color: #2b2f3a; }
+/* phones: the town on top, the caption on its own line underneath, so words never cover the picture */
+@media (max-width: 720px) {
+  .dio { height: auto; display: flex; flex-direction: column; background: #f3ead6; border-radius: 10px; }
+  .dio-canvas { height: 24vh; }
+  .dio .fetch-tag { font-size: 12px; top: 8px; left: 8px; padding: 4px 8px 5px 20px; white-space: nowrap; max-width: none; }
+  .dio .fetch-tag small { display: none; }
+  .dio-radio { width: 40px; top: 6px; right: 8px; }
+  .dio-caption, .dio-note { position: static; max-width: none; border-radius: 0; padding: 5px 10px 6px; background: #f3ead6; }
+  .dio-caption { grid-template-columns: auto 1fr; align-items: baseline; gap: 8px; }
+  .dio-caption span { font-size: 15px; }
+  .dio-note { font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .dio-cut { animation: none; opacity: 0; } }

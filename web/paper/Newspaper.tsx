@@ -1,11 +1,13 @@
-// The Sausage Gazette front page.
+// The Sausage Gazette front page: one screen, no scrolling. The sidebar (your circles, the pipeline) stays put
+// on the left; the classifieds are pages you flip; reading an ad turns to its own page in the same spot.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RunView } from "../App";
-import type { Edition, UiState, Command } from "../../contract/types";
-import { DachshundMasthead, DachshundStretch, DachshundPeek } from "../art";
-import { Classifieds } from "./Classifieds";
+import type { Edition, Job, UiState, Command } from "../../contract/types";
+import { DachshundMasthead, DachshundPeek } from "../art";
+import { ClassifiedPages } from "./Classifieds";
 import { AdDetail } from "./AdDetail";
 import { Letters } from "./Letters";
+import { useDogName } from "./dogName";
 import { isActive, printableJobs, todayLine } from "./util";
 import "./paper.css";
 
@@ -23,20 +25,18 @@ const PIPELINE = [
 ];
 
 export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkSent }: NewspaperProps) {
+  const dog = useDogName();
   const run = view.run;
   const active = isActive(run);
   const folded = active && run?.command === "scrape";
 
-  // Unfold animation only when we go from folded -> unfolded.
   const wasFolded = useRef(folded);
   const [unfolding, setUnfolding] = useState(false);
+  const [inkIn, setInkIn] = useState(true);
   useEffect(() => {
     if (wasFolded.current && !folded) { setUnfolding(true); setInkIn(true); }
     wasFolded.current = folded;
   }, [folded]);
-
-  // Fresh ads ink in on first print and after each unfold; afterwards they just sit there.
-  const [inkIn, setInkIn] = useState(true);
   useEffect(() => {
     if (!inkIn || !edition) return;
     const t = window.setTimeout(() => setInkIn(false), 3200);
@@ -45,60 +45,50 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
 
   const [openKey, setOpenKey] = useState<string | null>(null);
   const adRefs = useRef(new Map<string, HTMLButtonElement>());
-  const returnFocus = useRef<string | null>(null);
-
-  const jobs = edition?.jobs ?? [];
-  const printed = useMemo(() => printableJobs(jobs), [jobs]);
-  const fresh = printed.filter((j) => j.isFresh);
-  const rest = printed.filter((j) => !j.isFresh);
-  const circled = useMemo(() => new Set(state?.circled ?? []), [state?.circled]);
-  const circledJobs = jobs.filter((j) => circled.has(j.key));
-  // Ads /rank will still score: unscored, not vetoed, and not already in the tracker.
-  const waiting = printed.filter((j) => j.rankScore === null && !j.vetoed && !j.application).length;
-  const openJob = openKey ? jobs.find((j) => j.key === openKey) ?? null : null;
-
-  const toggle = useCallback((key: string) => {
-    onPatchState((s) => ({
-      circled: s.circled.includes(key) ? s.circled.filter((k) => k !== key) : [...s.circled, key],
-    }));
-  }, [onPatchState]);
-
-  const open = useCallback((key: string) => { returnFocus.current = key; setOpenKey(key); }, []);
-  const back = useCallback(() => setOpenKey(null), []);
-  useEffect(() => {
-    if (openKey === null && returnFocus.current) {
-      const el = adRefs.current.get(returnFocus.current);
-      returnFocus.current = null;
-      if (el) { el.focus(); el.scrollIntoView({ block: "center" }); }
-    }
-  }, [openKey]);
   const registerRef = useCallback((key: string, el: HTMLButtonElement | null) => {
     if (el) adRefs.current.set(key, el); else adRefs.current.delete(key);
   }, []);
 
+  const jobs = edition?.jobs ?? [];
+  const printed = useMemo(() => printableJobs(jobs), [jobs]);
+  const ordered = useMemo(() => [...printed.filter((j) => j.isFresh), ...printed.filter((j) => !j.isFresh)], [printed]);
+  const freshKeys = useMemo(() => new Set(printed.filter((j) => j.isFresh).map((j) => j.key)), [printed]);
+  const circled = useMemo(() => new Set(state?.circled ?? []), [state?.circled]);
+  const circledJobs = jobs.filter((j) => circled.has(j.key));
+  const waiting = printed.filter((j) => j.rankScore === null && !j.vetoed && !j.application).length;
+  const openJob = openKey ? jobs.find((j) => j.key === openKey) ?? null : null;
+  const freshCount = freshKeys.size;
+
+  const toggle = useCallback((key: string) => {
+    onPatchState((s) => ({ circled: s.circled.includes(key) ? s.circled.filter((k) => k !== key) : [...s.circled, key] }));
+  }, [onPatchState]);
+  const open = useCallback((key: string) => setOpenKey(key), []);
+  const tailor = useCallback((j: Job) => { setOpenKey(j.key); onStart("apply", j.url); }, [onStart]);
+
   const apps = edition?.applications ?? [];
   const pipeline = PIPELINE.map((p) => ({ ...p, n: apps.filter((a) => a.status === p.status).length }));
-
   const editionLine = !edition
     ? "The presses are warming up."
-    : fresh.length > 0
-      ? `${countWords(fresh.length)} came in with this morning's paper. Take your time.`
-      : printed.length > 0
-        ? "Nothing new this morning; the board still has a few worth a look."
-        : "A quiet edition. Pour another coffee.";
+    : freshCount > 0
+      ? `${countWords(freshCount)} came in with this morning's paper. Take your time.`
+      : printed.length > 0 ? "Nothing new this morning; the board still has a few worth a look." : "A quiet edition. Pour another coffee.";
+
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
+  const saveName = () => { const n = (nameDraft ?? "").trim(); if (n && n !== dog) onPatchState({ dogName: n.slice(0, 24) }); setNameDraft(null); };
 
   return (
     <div className="gz-paper">
       <div className="gz-toprule">
-        <span>Vol. I, No. {edition?.editionNumber ?? 1}</span>
+        <span className="gz-hide-narrow">Vol. I, No. {edition?.editionNumber ?? 1}</span>
         <span>{todayLine()}</span>
-        <span>Price: one belly rub</span>
+        <span className="gz-hide-narrow">Price: one belly rub</span>
       </div>
-
       <header className="gz-masthead">
-        <DachshundMasthead size={150} className="gz-masthead-dog" />
-        <h1 className="gz-title">The Sausage Gazette</h1>
-        <p className="gz-tagline">ALL THE JOBS THAT ARE FIT TO SNIFF</p>
+        <DachshundMasthead size={84} className="gz-masthead-dog" />
+        <div>
+          <h1 className="gz-title">The Sausage Gazette</h1>
+          <p className="gz-tagline">ALL THE JOBS THAT ARE FIT TO SNIFF</p>
+        </div>
       </header>
       <div className="gz-doublerule" />
 
@@ -118,95 +108,85 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
           <p>Tell the desk a little about yourself, and every morning's paper will carry the ads that suit you.</p>
           <button type="button" className="gz-btn" disabled={active} onClick={() => onStart("setup")}>Start my subscription</button>
         </section>
-      ) : folded ? (
-        <div className="gz-folded" role="status">
-          <div className="gz-folded-sheet" aria-hidden="true" />
-          <p>The paper's out being fetched&hellip;</p>
-          <p className="gz-quiet">Sip your coffee. It'll be on the table shortly.</p>
-        </div>
       ) : (
-        <div className={`gz-body${unfolding ? " is-unfolding" : ""}`} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setUnfolding(false); }}>
-          {openJob ? (
-            <div className="gz-pageturn" key={openJob.key}>
-              <AdDetail job={openJob} run={run} onBack={back} onStart={onStart} onMarkSent={onMarkSent} />
+        <div className="gz-front">
+          <aside className="gz-sidebar" aria-label="Your desk">
+            <h2 className="gz-headline gz-hide-narrow">{edition.profile.name ? `Good morning, ${edition.profile.name.split(" ")[0]}` : "Good morning"}</h2>
+            <p className="gz-lede gz-hide-narrow">{editionLine}</p>
+
+            <h3 className="gz-side-head">Your circles{circledJobs.length ? ` (${circledJobs.length})` : ""}</h3>
+            {circledJobs.length === 0 ? (
+              <p className="gz-quiet">Circle an ad with the red marker and it'll wait for you here.</p>
+            ) : (
+              <ul className="gz-circles-list">
+                {circledJobs.map((j) => (
+                  <li key={j.key}>
+                    <button type="button" className="gz-linkbtn gz-circle-title" onClick={() => open(j.key)}>{j.title}</button>
+                    <span className="gz-quiet gz-circle-co">{j.company}</span>
+                    <span className="gz-circle-acts">
+                      <button type="button" className="gz-btn gz-btn-small" onClick={() => tailor(j)} disabled={active}>Tailor</button>
+                      <button type="button" className="gz-linkbtn gz-small" onClick={() => toggle(j.key)}>Uncircle</button>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="gz-hide-narrow">
+              <h3 className="gz-side-head">The pipeline</h3>
+              <ol className="gz-pipeline" aria-label="Applications by stage">
+                {pipeline.map((p, i) => (
+                  <li key={p.status}>
+                    <span className="gz-pipe-n">{p.n}</span> {p.label}
+                    {i < pipeline.length - 1 && <span className="gz-pipe-arrow" aria-hidden="true"> &rarr;</span>}
+                  </li>
+                ))}
+              </ol>
+              <label className="gz-toggle">
+                <input type="checkbox" checked={state?.autoRank ?? true} disabled={!state} onChange={(e) => onPatchState({ autoRank: e.target.checked })} />
+                <span>Auto-rank after fetching</span>
+              </label>
+              {waiting > 0 && (
+                <p className="gz-desk-note">
+                  {waiting === 1 ? "One ad is" : `${waiting} ads are`} waiting for the ranking desk, which reads ten at a time.{" "}
+                  {!active && <button type="button" className="gz-linkbtn" onClick={() => onStart("rank")}>Send the next batch</button>}
+                </p>
+              )}
+              <h3 className="gz-side-head">Your pup</h3>
+              <label className="gz-pupname">
+                <span className="gz-quiet">Name</span>
+                <input id="gz-pup-name" value={nameDraft ?? dog} maxLength={24}
+                  onChange={(e) => setNameDraft(e.target.value)} onBlur={saveName}
+                  onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); if (e.key === "Escape") setNameDraft(null); }} />
+              </label>
             </div>
-          ) : (
-            <div className="gz-front">
-              <aside className="gz-sidebar" aria-label="Today's edition">
-                <h2 className="gz-headline">{edition.profile.name ? `Good morning, ${edition.profile.name.split(" ")[0]}` : "Good morning"}</h2>
-                <p className="gz-lede">{editionLine}</p>
+          </aside>
 
-                <h3 className="gz-side-head">Your circles</h3>
-                {circledJobs.length === 0 ? (
-                  <p className="gz-quiet">Circle an ad with the red marker and it'll wait for you here.</p>
-                ) : (
-                  <ul className="gz-circles-list">
-                    {circledJobs.map((j) => (
-                      <li key={j.key}>
-                        <button type="button" className="gz-linkbtn" onClick={() => open(j.key)}>
-                          {j.title}
-                        </button>
-                        <span className="gz-quiet"> &middot; {j.company}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <h3 className="gz-side-head">The pipeline</h3>
-                <ol className="gz-pipeline" aria-label="Applications by stage">
-                  {pipeline.map((p, i) => (
-                    <li key={p.status}>
-                      <span className="gz-pipe-n">{p.n}</span> {p.label}
-                      {i < pipeline.length - 1 && <span className="gz-pipe-arrow" aria-hidden="true"> &rarr;</span>}
-                    </li>
-                  ))}
-                </ol>
-
-                <label className="gz-toggle">
-                  <input
-                    type="checkbox"
-                    checked={state?.autoRank ?? true}
-                    disabled={!state}
-                    onChange={(e) => onPatchState({ autoRank: e.target.checked })}
-                  />
-                  <span>Auto-rank after fetching</span>
-                </label>
-
-                {waiting > 0 && (
-                  <p className="gz-desk-note">
-                    {waiting === 1 ? "One ad is" : `${waiting} ads are`} waiting for the ranking desk, which reads ten at a time.{" "}
-                    {!active && (
-                      <button type="button" className="gz-linkbtn" onClick={() => onStart("rank")}>
-                        Send the next batch
-                      </button>
-                    )}
-                  </p>
-                )}
-
-                <DachshundStretch size={140} className="gz-vignette" />
-              </aside>
-
-              <div className="gz-main">
-                <Classifieds
-                  fresh={fresh}
-                  rest={rest}
-                  circled={circled}
-                  inkIn={inkIn}
-                  onToggle={toggle}
-                  onOpen={open}
-                  registerRef={registerRef}
-                />
-                <div className="gz-gutter-dog" aria-hidden="true"><DachshundPeek size={90} /></div>
-                <Letters applications={apps} busy={active} onStart={onStart} />
+          <div className="gz-main">
+            {folded ? (
+              <div className="gz-folded" role="status">
+                <div className="gz-folded-sheet" aria-hidden="true" />
+                <p>The paper's out being fetched&hellip;</p>
+                <p className="gz-quiet">Sip your coffee. {dog} will bring it to the mat.</p>
               </div>
-            </div>
-          )}
+            ) : openJob ? (
+              <div className="gz-detail-scroll gz-pageturn" key={openJob.key}>
+                <AdDetail job={openJob} run={run} onBack={() => setOpenKey(null)} onStart={onStart} onMarkSent={onMarkSent} />
+              </div>
+            ) : (
+              <div className={`gz-body${unfolding ? " is-unfolding" : ""}`} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setUnfolding(false); }}>
+                <h2 className="gz-section-head">Classifieds</h2>
+                <p className="gz-hint">Click an ad to circle it. Circled ads get a Tailor button.</p>
+                <ClassifiedPages
+                  jobs={ordered} freshKeys={freshKeys} circled={circled} inkIn={inkIn}
+                  onToggle={toggle} onOpen={open} onTailor={tailor} registerRef={registerRef}
+                  tail={apps.some((a) => !a.isFinal) ? { label: "Letters to the editor", node: <div className="gz-tailpage"><Letters applications={apps} busy={active} onStart={onStart} /></div> } : undefined}
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
-
-      <footer className="gz-foot">
-        <span>Printed slowly, read slowly.</span>
-      </footer>
     </div>
   );
 }

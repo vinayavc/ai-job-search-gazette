@@ -1,4 +1,5 @@
 // "Letters to the Editor": applications still in motion, plus the errands that keep them moving.
+import { useDogName } from "./dogName";
 import { useState, type FormEvent } from "react";
 import type { Application, Command } from "../../contract/types";
 import { DachshundSleep } from "../art";
@@ -17,6 +18,7 @@ interface Props {
 }
 
 export function Letters({ applications, busy, onStart }: Props) {
+  const dog = useDogName();
   const [replying, setReplying] = useState(false);
   const [reply, setReply] = useState("");
   const [err, setErr] = useState<string | null>(null);
@@ -56,7 +58,7 @@ export function Letters({ applications, busy, onStart }: Props) {
                     {a.date && <span className="gz-letter-date"> &middot; {a.date}</span>}
                     {a.status === "interview" && (
                       <button type="button" className="gz-linkbtn" disabled={busy} onClick={() => onStart("interview", `${a.company} ${a.role}`)}>
-                        Ask Doxie (interview prep)
+                        Ask {dog} (interview prep)
                       </button>
                     )}
                   </li>
@@ -90,7 +92,7 @@ export function Letters({ applications, busy, onStart }: Props) {
           {err && <p id="gz-reply-err" className="gz-gentle">{err}</p>}
         </form>
       )}
-      {busy && <p className="gz-quiet">Doxie is out on an errand; these will be ready when she's back.</p>}
+      {busy && <p className="gz-quiet">{dog} is out on an errand; these will be ready when the errand's done.</p>}
 
       <div className="gz-selfimprove">
         <DachshundSleep size={90} />

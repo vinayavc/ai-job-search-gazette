@@ -1,4 +1,5 @@
 // "Page turn" reading view for one ad. Rendered in flow, in place of the classifieds.
+import { useDogName } from "./dogName";
 import { useEffect, useRef, useState } from "react";
 import type { Job, Command, Run } from "../../contract/types";
 import { api } from "../api";
@@ -18,6 +19,7 @@ function fileName(p: string): string {
 }
 
 export function AdDetail({ job, run, onBack, onStart, onMarkSent }: Props) {
+  const dog = useDogName();
   const headRef = useRef<HTMLHeadingElement>(null);
   const [asking, setAsking] = useState(false);
   const [noted, setNoted] = useState<null | "sent" | "later">(null);
@@ -93,7 +95,7 @@ export function AdDetail({ job, run, onBack, onStart, onMarkSent }: Props) {
             </button>
             <button type="button" className="gz-btn" onClick={mail}>Mail the application</button>
           </div>
-          {busy && !tailoring && <p className="gz-quiet">Doxie is busy with another errand; the typewriter is free again soon.</p>}
+          {busy && !tailoring && <p className="gz-quiet">{dog} is busy with another errand; the typewriter is free again soon.</p>}
 
           {asking && (
             <div className="gz-posted" role="group" aria-label="Did you post the application?">
@@ -108,7 +110,7 @@ export function AdDetail({ job, run, onBack, onStart, onMarkSent }: Props) {
           {tailoring && (
             <div className="gz-typing" role="status">
               <DachshundTypewriter size={180} />
-              <p>Doxie is at the typewriter, tailoring your pages&hellip;</p>
+              <p>{dog} is at the typewriter, tailoring your pages&hellip;</p>
             </div>
           )}
         </div>

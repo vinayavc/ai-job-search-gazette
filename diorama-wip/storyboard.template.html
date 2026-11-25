@@ -1,0 +1,165 @@
+<title>Sausage Gazette Storyboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Layout: a board of film stills pinned on the backdrop paper of the diorama, notes typed under each still. */
+  :root {
+    --paper: #b4d2de; --card: #fbf6ec; --ink: #2b2f3a; --soft: #5d6878; --accent: #e9573f; --rule: #d9cfbf;
+    --display: "Fredoka", "Avenir Next", "Trebuchet MS", sans-serif;
+    --body: "Fredoka", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    color-scheme: light;
+  }
+  body { background: var(--paper); color: var(--ink); font-family: var(--body); font-weight: 400; line-height: 1.5; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 64px; }
+  .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+  header { display: grid; gap: 6px; }
+  .eyebrow { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); font-weight: 600; }
+  h1 { font-family: var(--display); font-weight: 600; font-size: clamp(28px, 4vw, 44px); line-height: 1.1; margin: 0; text-wrap: balance; }
+  .lede { margin: 0; max-width: 66ch; color: var(--soft); font-size: 17px; }
+  .status { font-size: 14px; color: var(--soft); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 22px; }
+  .panel { background: var(--card); border-radius: 18px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; box-shadow: 0 1px 0 rgba(43,47,58,0.08), 0 10px 30px -18px rgba(38,62,92,0.5); }
+  .still { aspect-ratio: 16 / 9; max-width: 100%; background: #9fb9c4; display: grid; place-items: center; color: #eef4f6; font-size: 14px; }
+  .still img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .notes { padding: 16px 18px 20px; display: grid; gap: 10px; min-width: 0; }
+  .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .num { font-family: var(--display); font-weight: 600; font-size: 22px; }
+  .time { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--soft); }
+  .tag { margin-left: auto; font-size: 12px; font-weight: 600; letter-spacing: 0.14em; color: #fff6e6; background: var(--accent); border-radius: 99px; padding: 2px 10px; }
+  .caption { font-family: var(--display); font-weight: 500; font-size: 19px; line-height: 1.3; margin: 0; }
+  dl { margin: 0; display: grid; grid-template-columns: 64px 1fr; gap: 6px 10px; font-size: 14.5px; }
+  dt { color: var(--soft); font-weight: 500; }
+  dd { margin: 0; min-width: 0; }
+  .assume { background: var(--card); border-radius: 18px; padding: 20px 22px; display: grid; gap: 8px; }
+  .assume h2 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0; }
+  .assume ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; max-width: 80ch; }
+  canvas#stage { position: absolute; left: -99999px; top: 0; width: 960px; height: 540px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Tiny Diorama · storyboard · 17 s</div>
+    <h1>The Sausage Gazette: from fetch to apply</h1>
+    <p class="lede">Six beats on one floating tile. The mail van links the Gazette press, your house and the hiring office. The app's header plays each beat when its stage happens; beats 5 and 6 play only after you say you applied on the job site.</p>
+    <div class="status" id="status" role="status">Rendering the stills…</div>
+  </header>
+
+  <section class="grid" id="grid">
+    <article class="panel">
+      <div class="still" id="s0">Rendering…</div>
+      <div class="notes">
+        <div class="head"><span class="num">1</span><span class="time">0.0 – 2.6 s</span><span class="tag">FETCH</span></div>
+        <p class="caption">“The Gazette goes to press”</p>
+        <dl>
+          <dt>Moves</dt><dd>First frame: the tile in morning light, the red mail van backed up to the press. A rolled Gazette rides the rollers into the van, the hatch slams, the press door rolls down and its sign flips red.</dd>
+          <dt>Camera</dt><dd>Long lens, three-quarter view from the front left, framed on the press; the tile starts its slow turn and the camera begins one slow rise.</dd>
+          <dt>Sound</dt><dd>Roller rumble, a paper flick, hatch thud and click, door roll and tock, sign swish and ding (C).</dd>
+        </dl>
+      </div>
+    </article>
+    <article class="panel">
+      <div class="still" id="s1">Rendering…</div>
+      <div class="notes">
+        <div class="head"><span class="num">2</span><span class="time">2.6 – 5.25 s</span><span class="tag">FETCH</span></div>
+        <p class="caption">“The mailman brings it to your door”</p>
+        <dl>
+          <dt>Moves</dt><dd>The van drives the S-road and pulls up at the bend past your house, leaving the porch clear. The mailman pops out, hops to the porch and drops the paper by the sleeping dachshund, who wakes with ears up and a wag, then hops back into the van. The house sign flips red.</dd>
+          <dt>Camera</dt><dd>Travels with the van and pushes in on the porch; the sharp band follows the van to the mat.</dd>
+          <dt>Sound</dt><dd>Small engine climbing and settling, exhaust pops, brake swish, hop tocks, paper slap, two soft “yip” blips, sign ding (E).</dd>
+        </dl>
+      </div>
+    </article>
+    <article class="panel">
+      <div class="still" id="s2">Rendering…</div>
+      <div class="notes">
+        <div class="head"><span class="num">3</span><span class="time">5.25 – 7.6 s</span><span class="tag">RANK</span></div>
+        <p class="caption">“Scored for you. You circle your pick.”</p>
+        <dl>
+          <dt>Moves</dt><dd>The dog sits and the Gazette unrolls on the step. Three ad cards pop up over the porch, and a red rubber stamp thumps a fit score onto each (61, 88, 54). Then a marker ring draws itself around the 88: that is your circle, made in the newspaper below. The other two drop away and the circled ad flies into the typewriter.</dd>
+          <dt>Camera</dt><dd>Close on the porch, rising a little so the cards sit in the upper third.</dd>
+          <dt>Sound</dt><dd>Three rising pops, three rubber-stamp thumps, a marker stroke, two swishes, a whoosh into the typewriter.</dd>
+        </dl>
+      </div>
+    </article>
+    <article class="panel">
+      <div class="still" id="s3">Rendering…</div>
+      <div class="notes">
+        <div class="head"><span class="num">4</span><span class="time">7.6 – 11.2 s</span><span class="tag">TAILOR</span></div>
+        <p class="caption">“Your pup types up your CV and letter”</p>
+        <dl>
+          <dt>Moves</dt><dd>The dog sits at the little typewriter at the end of the step and types. A page marked CV pops up, then one marked COVER LETTER. They fold into a red envelope; the dog carries it to the letterbox, rears up and posts it, and the flag pops up. Then it trots back to the mat and curls up. Nothing has been sent: the flag stays up, waiting for you.</dd>
+          <dt>Camera</dt><dd>Holds on the porch, drifting from the typewriter to the letterbox.</dd>
+          <dt>Sound</dt><dd>Typing, two typebar clacks with paper, the carriage bell, a paper fold, paw tocks, letterbox clunk and flag click.</dd>
+        </dl>
+      </div>
+    </article>
+    <article class="panel">
+      <div class="still" id="s4">Rendering…</div>
+      <div class="notes">
+        <div class="head"><span class="num">5</span><span class="time">11.2 – 13.6 s</span><span class="tag">YOU APPLY</span></div>
+        <p class="caption">“You apply on the job site. Off it goes.”</p>
+        <dl>
+          <dt>Moves</dt><dd>Played only after you tell the app you applied. The front door swings open and you (a peg person) step out, hop round to the letterbox and take the letter; the flag drops. The mailman hops over, you hand it across, wave, and go back in as the door closes. The dog lifts an ear, then sleeps on.</dd>
+          <dt>Camera</dt><dd>Stays on the porch, then starts to follow the mailman back to the van.</dd>
+          <dt>Sound</dt><dd>Door click, hop tocks, letterbox click and paper, a little handover blip, waves, satchel pop, the door thud.</dd>
+        </dl>
+      </div>
+    </article>
+    <article class="panel">
+      <div class="still" id="s5">Rendering…</div>
+      <div class="notes">
+        <div class="head"><span class="num">6</span><span class="time">13.6 – 17.0 s</span><span class="tag">SENT</span></div>
+        <p class="caption">“Sent. Time for a nap.”</p>
+        <dl>
+          <dt>Moves</dt><dd>Dusk falls as the van drives to the office: the sun sinks orange, the sky cools, and the street lamp and your windows catch. The mailman slides the letter through the office mail slot; the office lights up window by window, a clerk pops out and hops, and the office sign flips red. The last second holds on the lit office, with the dog asleep at home.</dd>
+          <dt>Camera</dt><dd>Travels with the van to the office and ends in a three-quarter view; the lens stops down a little for the final picture.</dd>
+          <dt>Sound</dt><dd>Engine, lamp click, brake swish, hop tocks, envelope slide and slot tock, five rising window blips, sign ding (G) and a soft success chime.</dd>
+        </dl>
+      </div>
+    </article>
+  </section>
+
+  <section class="assume">
+    <h2>Assumptions</h2>
+    <ul>
+      <li>Stage mapping in the header: beats 1–2 play while <b>/scrape</b> runs, beat 3 while <b>/rank</b> runs and beat 4 while <b>/apply</b> runs. Beats 5–6 play only after you answer “Posted it?” with yes. With nothing running, the header shows the living scene: the dog asleep on the mat, the time of day following your clock.</li>
+      <li>The letterbox flag stays up whenever you have tailored applications you haven't sent yet: a quiet reminder, not a badge.</li>
+      <li>You circle ads in the newspaper below the header; the ring in beat 3 stands for that click. The dachshund never circles for you.</li>
+      <li>The ad cards show generic role words (Frontend, Backend, Data) and made-up fit scores (61, 88, 54), not your real jobs. Fit scores in the repo run 0–100.</li>
+      <li>“You” are a peg person in mustard, like the other peg people; the mailman wears slate blue with a red satchel. The van, the newspaper band, the score stamps, your circle and the envelope share the one accent red.</li>
+      <li>The radio lives in the page, not in the diorama.</li>
+      <li>Length is 17 s, longer than 12, because six beats are needed to keep “documents ready” and “you applied” separate.</li>
+      <li>In the header the same scene renders into a wide, short strip with its own camera framing; this storyboard shows the 16:9 explainer.</li>
+    </ul>
+  </section>
+</div>
+<canvas id="stage" width="1920" height="1080"></canvas>
+
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js" } }</script>
+<script type="module">
+  import * as THREE from 'three';
+  window.THREE = THREE;
+  const status = document.getElementById('status');
+  try {
+    /*__STAGE__*/
+    /*__STYLE__*/
+    const style = window.STYLES[window.STYLES.length - 1];
+    const canvas = document.getElementById('stage');
+    const S = await K.run(canvas, style, { samples: 16 });
+    const KEYS = [0.85, 4.18, 7.05, 8.95, 12.48, 16.4];
+    for (let i = 0; i < KEYS.length; i++) {
+      status.textContent = `Rendering still ${i + 1} of ${KEYS.length}…`;
+      await new Promise((r) => setTimeout(r, 30));
+      S.seek(KEYS[i], 16);
+      const img = new Image(); img.alt = `Beat ${i + 1} key frame at ${KEYS[i]} s`; img.src = canvas.toDataURL('image/jpeg', 0.9);
+      const slot = document.getElementById('s' + i); slot.textContent = ''; slot.appendChild(img);
+    }
+    status.textContent = 'All six stills rendered with the stage kit at 16 samples.';
+    window.__done = true;
+  } catch (e) {
+    console.error(e);
+    status.textContent = 'The stills could not render: ' + (e && e.message ? e.message : e);
+    window.__error = String(e && e.stack || e);
+  }
+</script>

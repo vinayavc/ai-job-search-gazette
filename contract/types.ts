@@ -89,6 +89,7 @@ export interface Edition {
 export interface UiState {
   circled: string[];          // job keys
   autoRank: boolean;          // run /rank after every /scrape (default true)
+  dogName: string;            // what the dachshund is called in the UI (default "Doxie"), 1-24 characters
   radio: { station: "jazz" | "lofi" | "rain"; volume: number; on: boolean };
 }
 

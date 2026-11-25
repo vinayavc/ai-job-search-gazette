@@ -1,9 +1,9 @@
 // The diner banner above the paper: wall, window, door, counter, radio and the dachshund.
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import type { RunView } from "../App";
 import type { Command, Run, RunStatus, UiState } from "../../contract/types";
-import { DachshundFetch, DachshundSit, DachshundSleep, DachshundTypewriter } from "../art";
-import { modeOf, useDog, type Dog } from "./useDog";
+import { DachshundFetch, DachshundSit, DachshundSleep, DachshundStretch, DachshundTypewriter } from "../art";
+import { ART_W, modeOf, useDog, type DogView } from "./useDog";
 import { Radio } from "./Radio";
 import "./diner.css";
 
@@ -27,23 +27,26 @@ function chalk(view: RunView): { head: string; line: string } {
   return { head, line: last ?? (run.status === "queued" ? "Grabbing the leash" : "Working on it") };
 }
 
-function DogSprite({ dog }: { dog: Dog }) {
-  const art =
-    dog.pose === "sleep" || dog.pose === "lie" ? <DachshundSleep size={100} className="dog-art" /> :
-    dog.pose === "sit" ? <DachshundSit size={74} className="dog-art" /> :
-    dog.pose === "type" ? <DachshundTypewriter size={104} className="dog-art" /> :
-    <DachshundFetch size={120} className="dog-art" running={dog.pose === "run"} carrying={dog.carrying} />;
+// Every pose is stacked in one rig and drawn at the same px-per-unit (--k), anchored at the
+// dog's bottom centre, so changing pose never changes its size or position. Only the
+// active pose is opaque; the rest cross-fade. useDog moves the rig (translate/scale/flip).
+const DogRig = forwardRef<HTMLDivElement, { view: DogView; flipRef: React.RefObject<HTMLDivElement> }>(function DogRig({ view, flipRef }, ref) {
+  const on = (p: string) => `dog-sprite s-${p} ${p === "fetch" ? (view.pose === "run" || view.pose === "stand" ? "on" : "") : view.pose === p ? "on" : ""}`;
   return (
-    <div
-      className={`dog pose-${dog.pose} ${dog.hidden ? "is-hidden" : ""}`}
-      style={{ left: `${dog.x}%`, transitionDuration: `${dog.ms}ms, 300ms` }}
-      aria-hidden="true"
-    >
-      <div className="dog-flip" style={{ transform: `scaleX(${dog.facing})` }}>{art}</div>
-      {dog.pose === "sleep" && <span className="zzz"><i>z</i><i>z</i><i>z</i></span>}
+    <div ref={ref} className={`dog pose-${view.pose}`} aria-hidden="true">
+      <div ref={flipRef} className="dog-flip">
+        <div className={on("fetch")} style={{ ["--w" as string]: ART_W.fetch }}>
+          <DachshundFetch className="dog-art" running={view.pose === "run"} carrying={view.carrying} />
+        </div>
+        <div className={on("sleep")} style={{ ["--w" as string]: ART_W.sleep }}><DachshundSleep className="dog-art" /></div>
+        <div className={on("stretch")} style={{ ["--w" as string]: ART_W.stretch }}><DachshundStretch className="dog-art" /></div>
+        <div className={on("sit")} style={{ ["--w" as string]: ART_W.sit }}><DachshundSit className="dog-art" /></div>
+        <div className={on("type")} style={{ ["--w" as string]: ART_W.type }}><DachshundTypewriter className="dog-art" /></div>
+      </div>
+      {view.pose === "sleep" && <span className="zzz"><i>z</i><i>z</i><i>z</i></span>}
     </div>
   );
-}
+});
 
 function Street() {
   return (
@@ -104,22 +107,27 @@ function useDemo(view: RunView): RunView {
 export function DinerScene(props: DinerSceneProps) {
   const { onFetch, radio, onRadioChange } = props;
   const view = useDemo(props.view);
-  const dog = useDog(view.run);
+  const sceneRef = useRef<HTMLElement>(null);
+  const dogRef = useRef<HTMLDivElement>(null);
+  const flipRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const paperRef = useRef<SVGSVGElement>(null);
+  const dog = useDog(view.run, { scene: sceneRef, dog: dogRef, flip: flipRef, panel: panelRef, paper: paperRef });
   const busy = modeOf(view.run) !== "idle";
   const board = chalk(view);
   const fetching = modeOf(view.run) === "out";
 
   return (
-    <section className={`diner ${dog.pose === "type" ? "is-typing" : ""}`} aria-label="The diner">
+    <section ref={sceneRef} className={`diner ${dog.pose === "type" ? "is-typing" : ""}`} aria-label="The diner">
       <div className="diner-trim" />
       <div className="diner-window" aria-hidden="true">
         <Street />
         <div className="open-sign"><b>OPEN</b><span>COFFEE 5¢</span></div>
       </div>
 
-      <div className={`diner-door ${dog.door ? "is-open" : ""}`} aria-hidden="true">
+      <div className="diner-door" aria-hidden="true">
         <div className="door-outside" />
-        <div className="door-panel"><span className="door-port" /><span className="door-knob" /></div>
+        <div ref={panelRef} className="door-panel"><span className="door-port" /><span className="door-knob" /></div>
       </div>
 
       <div className="chalkboard" role="status" aria-live="polite">
@@ -145,14 +153,14 @@ export function DinerScene(props: DinerSceneProps) {
       <div className="rug" aria-hidden="true" />
       <div className="table" aria-hidden="true"><span className="table-top" /><span className="table-leg l" /><span className="table-leg r" /></div>
 
-      {dog.paper && (
-        <svg className="dropped-paper" viewBox="0 0 44 16" width="40" aria-hidden="true">
-          <rect x="2" y="3" width="38" height="11" rx="5.5" fill="#f3ead6" stroke="#2a2620" strokeWidth="2" />
-          <ellipse cx="36" cy="8.5" rx="2.5" ry="5.5" fill="#f3ead6" stroke="#2a2620" strokeWidth="2" />
-          <path d="M18 3v11M21 3v11" stroke="#2a2620" strokeWidth="1.4" />
-        </svg>
-      )}
-      <DogSprite dog={dog} />
+      <svg key={dog.paperKey} ref={paperRef} className="dropped-paper" viewBox="0 0 44 16" width="40" aria-hidden="true" style={{ opacity: 0 }}>
+        <rect x="2" y="3" width="38" height="11" rx="5.5" fill="#f3ead6" stroke="#2a2620" strokeWidth="2" />
+        <ellipse cx="36" cy="8.5" rx="2.5" ry="5.5" fill="#f3ead6" stroke="#2a2620" strokeWidth="2" />
+        <path d="M18 3v11M21 3v11" stroke="#2a2620" strokeWidth="1.4" />
+      </svg>
+      <DogRig ref={dogRef} view={dog} flipRef={flipRef} />
+      {/* the wall and right jamb beside the doorway, drawn in front of the dog so it walks out THROUGH the door */}
+      <div className="door-jamb-front" aria-hidden="true" />
       <span className="sr-only">
         {fetching ? "The dachshund is out fetching today's edition." : dog.pose === "sleep" ? "The dachshund is asleep under the table." : ""}
       </span>

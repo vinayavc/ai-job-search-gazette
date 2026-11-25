@@ -4,3 +4,8 @@ dist/
 .team/
 public/records/*
 !public/records/README.md
+
+# diorama build outputs (rebuilt by diorama-wip/build.py)
+diorama-wip/storyboard.html
+diorama-wip/test.html
+diorama-wip/style.js

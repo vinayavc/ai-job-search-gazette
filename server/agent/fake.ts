@@ -28,7 +28,7 @@ function script(command: Command, args: string): { steps: Step[]; summary: strin
               header: "Remote",
               options: [
                 { label: "Yes, include remote", description: "Your city plus remote roles anywhere in your country." },
-                { label: "Vancouver only", description: "Only on-site or hybrid roles in Vancouver." },
+                { label: "Local only", description: "Only on-site or hybrid roles near you." },
               ],
             },
           },

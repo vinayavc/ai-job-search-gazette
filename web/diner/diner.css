@@ -50,9 +50,8 @@
 .door-outside { position: absolute; inset: 4px 4px 0; background: #d9ece6; }
 .door-panel {
   position: absolute; inset: 4px 4px 0; background: var(--red); border: 2px solid var(--ink); border-bottom: 0;
-  transform-origin: 100% 50%; transition: transform 0.55s ease-in-out;
+  transform-origin: 100% 50%; /* swung by useDog */
 }
-.diner-door.is-open .door-panel { transform: rotateY(-72deg); }
 .door-port {
   position: absolute; left: 50%; top: 14%; width: 46%; aspect-ratio: 1; transform: translateX(-50%);
   border-radius: 50%; background: #d9ece6; border: 2px solid var(--ink);
@@ -169,33 +168,43 @@
 .table-leg.l { left: 8px; }
 .table-leg.r { right: 8px; }
 
-/* the dog */
+/* the dog: one rig, moved by useDog with transforms; every pose drawn at --k px per drawing unit */
 .dog {
-  position: absolute; z-index: 4; bottom: 6px; color: var(--ink); --art-fill: var(--paper);
-  transition-property: left, opacity; transition-timing-function: linear, ease;
-  opacity: 1;
+  --k: 0.56px;
+  position: absolute; z-index: 4; left: 0; bottom: 6px; width: 0; height: 0;
+  color: var(--ink); --art-fill: var(--paper);
+  transform-origin: 0 0; will-change: transform;
 }
-.dog.is-hidden { opacity: 0; }
-.dog-flip { transition: transform 0.25s ease; transform-origin: 50% 50%; }
-.dog-art { display: block; }
-.dog.pose-sleep { z-index: 2; bottom: 4px; }
-.dog.pose-sleep .dog-art { transform-origin: 50% 100%; animation: breathe 4.2s ease-in-out infinite; }
-.dog.pose-lie .dog-art { transform: scaleY(0.97); transform-origin: 50% 100%; }
-.dog.pose-type { bottom: calc(200px - 112px - 2px); z-index: 4; }
-.dog.pose-sit { bottom: 4px; }
-.dog.pose-stand .dog-art, .dog.pose-run .dog-art { margin-bottom: 1px; }
-@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02, 1.025); } }
-.zzz { position: absolute; left: 6px; top: -8px; font-family: "Caveat", cursive; color: var(--ink); pointer-events: none; }
+.dog-flip { position: absolute; left: 0; bottom: 0; width: 0; height: 0; }
+.dog-sprite {
+  position: absolute; left: 0; bottom: 0; transform: translateX(-50%);
+  opacity: 0; transition: opacity 220ms ease;
+}
+.dog-sprite.on { opacity: 1; }
+.dog-sprite .dog-art { display: block; width: calc(var(--w) * var(--k)); height: auto; }
+.dog-sprite.s-sleep { bottom: -2px; }
+/* breathing: the sleeping body rises a hair from the floor; its width never changes */
+.dog-sprite.s-sleep .dog-art { transform-origin: 50% 100%; animation: breathe 4.2s ease-in-out infinite; }
+@keyframes breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.03); } }
+.zzz { position: absolute; left: -18px; top: -44px; font-family: "Caveat", cursive; color: var(--ink); pointer-events: none; }
 .zzz i { position: absolute; font-style: normal; font-size: 13px; opacity: 0; animation: zz 4.2s ease-out infinite; }
 .zzz i:nth-child(2) { animation-delay: 1.4s; font-size: 11px; }
 .zzz i:nth-child(3) { animation-delay: 2.8s; font-size: 9px; }
 @keyframes zz { 0% { transform: translate(0, 0); opacity: 0; } 30% { opacity: 0.85; } 100% { transform: translate(-10px, -22px); opacity: 0; } }
 
-.dropped-paper { position: absolute; z-index: 3; left: calc(58% - 34px); bottom: 6px; animation: paper-drop 0.5s ease-out both; }
+/* the wall right of the doorway (cream jamb, ink frame, wall), in front of the dog */
+.door-jamb-front {
+  position: absolute; z-index: 5; top: 33px; bottom: var(--floor-h); right: 0;
+  width: calc(1.5% + 7px);
+  background: linear-gradient(90deg, var(--cream) 0 4px, var(--ink) 4px 7px, var(--wall) 7px);
+  pointer-events: none;
+}
+
+.dropped-paper { position: absolute; z-index: 3; left: 0; bottom: 6px; animation: paper-drop 0.5s ease-out both; }
 @keyframes paper-drop {
-  0% { transform: translateY(-14px) rotate(-12deg); }
-  60% { transform: translateY(0) rotate(3deg); }
-  80% { transform: translateY(-3px) rotate(0deg); }
+  0% { transform: translateY(-16px) rotate(-12deg); }
+  55% { transform: translateY(0) rotate(3deg); }
+  78% { transform: translateY(-2px) rotate(0deg); }
   100% { transform: translateY(0); }
 }
 
@@ -213,10 +222,7 @@
   .counter { width: 36%; }
   .radio { left: 19%; width: 50px; }
   .chalkboard { width: 30%; }
-  .dog-art { width: 84px; }
-  .dog.pose-sit .dog-art { width: 58px; }
-  .dog.pose-type .dog-art { width: 70px; }
-  .dropped-paper { left: calc(58% - 30px); }
+  .dog { --k: 0.4px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -34,7 +34,7 @@ const WORDS: Record<Command, string> = {
   apply: "Typing up your application",
   outcome: "Noting a reply",
   "gmail-sync": "Checking the mailbox",
-  interview: "Interview practice with Doxie",
+  interview: "Interview practice",
   upskill: "The self-improvement column",
 };
 export const commandWords = (c: Command): string => WORDS[c] ?? c;
