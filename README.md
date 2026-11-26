@@ -62,6 +62,8 @@ Either way the paper opens at **http://localhost:4747**. To try it without spend
 
 ### Your first visit
 
+A short tour opens by itself: the 17-second explainer video, then a walk around the page. It covers fetching, circling, Tailor, applying, the radio and adding a station. Replay it any time from **Take the tour** at the top of the paper.
+
 - **No profile yet?** The paper shows **Subscribe to the Gazette**. Press **Start my subscription** to run `/setup`. Its questions appear on the order pad, the note that slides in at the bottom right, and you answer them there.
 - **Profile already set up?** You go straight to the paper. Press **Fetch today's edition** at the top left for your first batch of ads.
 
@@ -128,7 +130,13 @@ Click "How it works" at the top of the paper, for a 17-second explainer with sou
 
 ## Radio
 
-The little radio at the top right is off until you press it. With nothing set up, it plays a soft jazz, lo-fi or rain tune generated in the browser. You can stock it with your own music files, or add live internet stations. See [public/records/README.md](public/records/README.md).
+The little radio at the top right is off until you press it. Click it for the dial: **Switch on**, then pick **Jazz**, **Lo-fi** or **Rain**, soft tunes generated in your browser.
+
+**Adding a station:** press **+ Add a station** on the dial and paste a link to a station you like. Its normal "Listen live" web page is fine; the Gazette finds the stream on it. You can also paste a direct stream or a `.pls`/`.m3u` playlist. Name it, press **Add & play**, and it joins the dial with a red dot. **×** removes it. Your stations are saved with your other Gazette settings in `ui/.state/`.
+
+If a station's page hides its stream, look for a "direct stream" or "listen in your own player" link, and paste that instead. HLS (`.m3u8`) streams aren't supported.
+
+You can also stock the radio with your own music files, or list stations in a file. See [public/records/README.md](public/records/README.md).
 
 ## Development
 

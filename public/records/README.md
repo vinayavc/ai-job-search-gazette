@@ -10,7 +10,10 @@ station's files with a gentle crossfade, and falls back to the in-browser tune w
 
 ## Live stations
 
-Optional `stations.json` (same folder, gitignored) adds live internet radio to the dial, e.g.
+The easiest way is **+ Add a station** on the radio's dial: paste the station's "listen live" page and the Gazette
+finds the stream. Those stations are saved in `ui/.state/`.
+
+To list stations by hand instead, use an optional `stations.json` (same folder, gitignored) adds live internet radio to the dial, e.g.
 `[{ "id": "wave983", "name": "WAVE 98.3", "url": "https://stream2.statsradio.com:8152/stream" }]`.
 `id` is lowercase letters, digits and dashes; `url` is the station's own audio stream (Icecast or Shoutcast MP3/AAC),
 not its web page. The stream has to allow cross-origin playback (most public streams do); if it doesn't, the station

@@ -1,6 +1,6 @@
 // KDOX 87.9 - the diner radio. Plays /records/playlist.json files when present,
 // otherwise synthesizes a quiet station with the Web Audio API. Live stations ("live:<id>") stream from the URLs
-// in /records/stations.json. Never starts without a user click.
+// in /records/stations.json or the ones added from the dial (saved in UI state). Never starts without a user click.
 import type { LiveStation, RadioStation } from "../../contract/types";
 export type Station = RadioStation;
 interface Track { station: Station; file: string }
@@ -28,7 +28,7 @@ function noiseBuffer(ctx: AudioContext, seconds: number, kind: "white" | "brown"
 }
 
 /** One running station: owns its nodes, fades in/out, cleans up after itself. */
-interface Program { out: GainNode; stop(at: number): void }
+interface Program { out: GainNode; stop(at: number): void; volume?(level: number): void }
 
 function loopNoise(ctx: AudioContext, buf: AudioBuffer, dest: AudioNode, gain: number) {
   const src = ctx.createBufferSource();
@@ -217,20 +217,29 @@ function records(ctx: AudioContext, dest: AudioNode, files: string[]): Program {
   return { out, stop: (at) => { stopped = true; finish(ctx, out, at, () => current?.el.pause()); } };
 }
 
-/** A live internet stream. Reconnects quietly if the stream drops. */
-function stream(ctx: AudioContext, dest: AudioNode, url: string): Program {
+/**
+ * A live internet stream. Reconnects quietly if the stream drops.
+ * Streams that allow cross-origin reads go through Web Audio (fades, the shared volume). Ones that don't would be
+ * silent there, so they play straight from the element, with the volume set on the element itself.
+ */
+function stream(ctx: AudioContext, dest: AudioNode, url: string, cors: boolean, level: number): Program {
   const out = makeOut(ctx, dest);
   const el = new Audio();
-  el.crossOrigin = "anonymous";   // the stream must send CORS headers, or Web Audio would hear silence
   el.preload = "none";
   const g = ctx.createGain(); g.gain.value = 0.0001;
-  ctx.createMediaElementSource(el).connect(g).connect(out);
+  if (cors) {
+    el.crossOrigin = "anonymous";
+    ctx.createMediaElementSource(el).connect(g).connect(out);
+  } else {
+    el.volume = level;
+  }
   let stopped = false, retry = 0;
   const connect = () => {
     if (stopped) return;
     el.src = url + (url.includes("?") ? "&" : "?") + "gz=" + Date.now();   // a fresh connection, never a stale cached chunk
     el.play().then(() => {
       retry = 0;
+      if (!cors) return;
       const t = ctx.currentTime;
       g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.85, t + 2);
     }).catch(() => again());
@@ -239,7 +248,12 @@ function stream(ctx: AudioContext, dest: AudioNode, url: string): Program {
   el.addEventListener("error", again);
   el.addEventListener("ended", again);
   connect();
-  return { out, stop: (at) => { stopped = true; finish(ctx, out, at, () => { el.pause(); el.removeAttribute("src"); el.load(); }); } };
+  const end = () => { el.pause(); el.removeAttribute("src"); el.load(); };
+  return {
+    out,
+    stop: (at) => { stopped = true; if (cors) finish(ctx, out, at, end); else { end(); finish(ctx, out, at, () => {}); } },
+    volume: cors ? undefined : (v) => { el.volume = Math.min(1, Math.max(0, v)); },
+  };
 }
 
 let stationsPromise: Promise<LiveStation[]> | null = null;
@@ -269,11 +283,12 @@ export class RadioEngine {
   private program: Program | null = null;
   private station: Station | null = null;
   private token = 0;
+  private level = 0.3;
 
   get started() { return this.ctx !== null; }
 
   /** Must be called from a user gesture the first time. */
-  async play(station: Station, volume: number) {
+  async play(station: Station, volume: number, added: LiveStation[] = []) {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       const comp = this.ctx.createDynamicsCompressor();
@@ -285,21 +300,25 @@ export class RadioEngine {
     this.setVolume(volume);
     if (this.station === station && this.program) return;
     const token = ++this.token;
-    const live = station.startsWith("live:") ? (await loadLiveStations()).find((s) => `live:${s.id}` === station) : undefined;
+    const live = station.startsWith("live:")
+      ? [...added, ...(await loadLiveStations())].find((s) => `live:${s.id}` === station)
+      : undefined;
     const tracks = live ? [] : (await loadPlaylist()).filter((t) => t.station === station).map((t) => t.file);
     if (token !== this.token || !this.ctx || !this.master) return;
     this.program?.stop(this.ctx.currentTime);
     this.station = station;
     const ctx = this.ctx, dest = this.master;
     // a live station that's no longer listed falls back to the jazz tune
-    this.program = live ? stream(ctx, dest, live.url) : tracks.length ? records(ctx, dest, tracks)
+    this.program = live ? stream(ctx, dest, live.url, live.cors !== false, this.level) : tracks.length ? records(ctx, dest, tracks)
       : station === "lofi" ? lofi(ctx, dest) : station === "rain" ? rain(ctx, dest) : jazz(ctx, dest);
   }
 
   setVolume(v: number) {
     if (!this.ctx || !this.master) return;
     const level = Math.pow(Math.min(1, Math.max(0, v)), 2) * 0.9;
+    this.level = level;
     this.master.gain.setTargetAtTime(level, this.ctx.currentTime, 0.08);
+    this.program?.volume?.(level);
   }
 
   stop() {

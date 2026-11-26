@@ -6,6 +6,7 @@ import { DioramaHeader } from "./diorama/DioramaHeader";
 import { DogNameContext } from "./paper/dogName";
 import { Newspaper } from "./paper/Newspaper";
 import { Notepad } from "./paper/Notepad";
+import { Tour } from "./tour/Tour";
 
 export interface RunView {
   run: Run | null;
@@ -22,7 +23,8 @@ export function App() {
   const [state, setState] = useState<UiState | null>(null);
   const [view, setView] = useState<RunView>(EMPTY);
   const [error, setError] = useState<string | null>(null);
-  const [sentAt, setSentAt] = useState<number | null>(null);   // "Posted it?" answered yes -> the header plays the handover
+  const [sentAt, setSentAt] = useState<number | null>(null);
+  const [tourAsked, setTourAsked] = useState(false);          // "Take the tour"; the first visit opens it on its own   // "Posted it?" answered yes -> the header plays the handover
   // "Tailor" works through your circles one /apply at a time (the commands share state files).
   const [queue, setQueue] = useState<string[]>([]);           // posting URLs still waiting for the typewriter
   const queueRef = useRef<string[]>([]);
@@ -119,6 +121,8 @@ export function App() {
         onFetch={() => start("scrape")}
         radio={state?.radio ?? { station: "jazz", volume: 0.4, on: false }}
         onRadioChange={(radio) => patchState({ radio })}
+        stations={state?.stations ?? []}
+        onStationsChange={(stations, radio) => patchState(radio ? { stations, radio } : { stations })}
       />
       {error && <div role="alert" style={{ background: "#f3ead6", border: "1px solid #c0392b", color: "#7a1f14", padding: "6px 10px", margin: "8px 0" }}>{error}</div>}
       <Newspaper
@@ -128,11 +132,22 @@ export function App() {
         onStart={start}
         tailorQueue={queue}
         onTailorAll={tailorAll}
+        onTour={() => setTourAsked(true)}
         onCancel={cancel}
         onPatchState={patchState}
         onMarkSent={(jobKey) => api.markSent(jobKey).then(() => { setSentAt(Date.now()); return reload(); }).catch((e) => setError(String(e.message)))}
       />
       <Notepad view={view} onAnswer={answer} onCancel={cancel} />
+      {edition && state && (tourAsked || !state.tourSeen) && (
+        <Tour
+          hasProfile={edition.profile.hasProfile}
+          hasAds={edition.jobs.some((j) => j.status === "new" || j.status === "ranked")}
+          dog={state.dogName}
+          onClose={() => { setTourAsked(false); if (!state.tourSeen) patchState({ tourSeen: true }); }}
+          onSubscribe={() => start("setup")}
+          onFetch={() => start("scrape")}
+        />
+      )}
     </main>
     </DogNameContext.Provider>
   );

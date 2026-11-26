@@ -3,6 +3,7 @@ import { resolve, join } from "node:path";
 import { existsSync } from "node:fs";
 import { dataRoutes } from "./data";
 import { agentRoutes } from "./agent";
+import { radioRoutes } from "./radio";
 
 export type RouteHandler = (req: Request, params: Record<string, string>) => Response | Promise<Response>;
 
@@ -16,7 +17,7 @@ if (!repoRoot) {
   console.error("Can't find your ai-job-search folder. Set GAZETTE_JOB_REPO=/path/to/ai-job-search, or clone the Gazette inside it.");
   process.exit(1);
 }
-const routes: Record<string, RouteHandler> = { ...dataRoutes(repoRoot), ...agentRoutes(repoRoot) };
+const routes: Record<string, RouteHandler> = { ...dataRoutes(repoRoot), ...agentRoutes(repoRoot), ...radioRoutes() };
 
 const compiled = Object.entries(routes).map(([key, handler]) => {
   const [method, path] = key.split(" ");

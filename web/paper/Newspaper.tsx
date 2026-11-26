@@ -14,7 +14,7 @@ import "./paper.css";
 export interface NewspaperProps {
   edition: Edition | null; state: UiState | null; view: RunView;
   onStart: (c: Command, args?: string) => void; onCancel: () => void;
-  tailorQueue: string[]; onTailorAll: (urls: string[]) => void;
+  tailorQueue: string[]; onTailorAll: (urls: string[]) => void; onTour: () => void;
   onPatchState: (p: Partial<UiState> | ((s: UiState) => Partial<UiState>)) => void; onMarkSent: (jobKey: string) => void;
 }
 
@@ -25,7 +25,7 @@ const PIPELINE = [
   { status: "offer", label: "offer" },
 ];
 
-export function Newspaper({ edition, state, view, onStart, tailorQueue, onTailorAll, onPatchState, onMarkSent }: NewspaperProps) {
+export function Newspaper({ edition, state, view, onStart, tailorQueue, onTailorAll, onTour, onPatchState, onMarkSent }: NewspaperProps) {
   const dog = useDogName();
   const run = view.run;
   const active = isActive(run);
@@ -86,7 +86,7 @@ export function Newspaper({ edition, state, view, onStart, tailorQueue, onTailor
       <div className="gz-toprule">
         <span className="gz-hide-narrow">Vol. I, No. {edition?.editionNumber ?? 1}</span>
         <span>{todayLine()}</span>
-        <span><a className="gz-howto" href="/explainer.html">How it works</a><span className="gz-hide-narrow"> &middot; Price: one belly rub</span></span>
+        <span><button type="button" className="gz-linkbtn gz-howto" onClick={onTour}>Take the tour</button> &middot; <a className="gz-howto" href="/explainer.html">How it works</a><span className="gz-hide-narrow"> &middot; Price: one belly rub</span></span>
       </div>
       <header className="gz-masthead">
         <DachshundMasthead size={84} className="gz-masthead-dog" />

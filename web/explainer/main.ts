@@ -8,6 +8,10 @@ import * as THREE from "three";
 import { Muxer, ArrayBufferTarget } from "mp4-muxer";
 import "./explainer.css";
 
+// ?embed: just the player (the first-run tour shows it in a frame)
+const EMBED = new URLSearchParams(location.search).has("embed");
+if (EMBED) document.documentElement.classList.add("is-embed");
+
 type Beat = { t0: number; t1: number; tag: string; text: string };
 interface Style { duration: number; beats: Beat[]; sound?: (k: unknown) => void }
 interface Stage { seek: (t: number, samples?: number) => void }

@@ -1,5 +1,5 @@
 // Orchestrator-owned typed client for contract/API.md.
-import type { Edition, Job, UiState, Run, RunRequest, RunEvent, AnswerRequest, Application } from "../contract/types";
+import type { Edition, Job, UiState, Run, RunRequest, RunEvent, AnswerRequest, Application, FoundStation } from "../contract/types";
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { headers: { "content-type": "application/json" }, ...init });
@@ -19,6 +19,7 @@ export const api = {
   currentRun: () => j<Run | null>("/api/runs/current"),
   answer: (id: string, a: AnswerRequest) => j<{ ok: true }>(`/api/runs/${id}/answer`, { method: "POST", body: JSON.stringify(a) }),
   cancel: (id: string) => j<Run>(`/api/runs/${id}/cancel`, { method: "POST" }),
+  findStation: (url: string) => j<FoundStation>("/api/radio/find", { method: "POST", body: JSON.stringify({ url }) }),
 };
 
 export function subscribeRun(id: string, onEvent: (e: RunEvent) => void): () => void {

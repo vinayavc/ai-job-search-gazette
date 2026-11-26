@@ -404,4 +404,4 @@
   .gz-tailor-all { display: inline-block; width: auto; margin: 0; }
   .gz-circles-note { display: none; }
 }
-.gz-howto { color: inherit; text-underline-offset: 3px; }
+.gz-howto { color: inherit; text-underline-offset: 3px; font: inherit; letter-spacing: inherit; text-transform: inherit; }

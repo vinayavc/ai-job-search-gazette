@@ -72,3 +72,10 @@ body { background: var(--ex-sky); color: var(--ex-ink); font-family: "Fredoka", 
   .ex-time { min-width: 0; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+
+/* ?embed: only the player, edge to edge, for the tour */
+.is-embed body { background: transparent; }
+.is-embed .ex { padding: 0; max-width: none; gap: 0; }
+.is-embed .ex-head, .is-embed .ex-export, .is-embed .ex-beats { display: none; }
+.is-embed .ex-player { border-radius: 0; box-shadow: none; }
+.is-embed .ex-controls { padding: 6px 10px; }

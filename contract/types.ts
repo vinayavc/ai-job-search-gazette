@@ -91,6 +91,8 @@ export interface UiState {
   autoRank: boolean;          // run /rank after every /scrape (default true)
   dogName: string;            // what the dachshund is called in the UI (default "Doxie"), 1-24 characters
   circlesOpen: boolean;       // "Your circles" expanded in the sidebar (default true)
+  tourSeen: boolean;          // the first-run tour was finished or skipped (default false: it opens on first visit)
+  stations: LiveStation[];    // live stations added from the radio's "Add a station" (stations.json ones are separate)
   radio: { station: RadioStation; volume: number; on: boolean };
 }
 
@@ -100,6 +102,7 @@ export interface LiveStation {
   id: string;                 // lowercase letters, digits and dashes, up to 40
   name: string;               // what the dial shows, e.g. "WAVE 98.3"
   url: string;                // an http(s) audio stream (Icecast/Shoutcast MP3 or AAC)
+  cors?: boolean;             // false: the stream refuses cross-origin playback, so it plays without Web Audio
 }
 
 // ---------- Agent runs ----------
@@ -148,3 +151,8 @@ export interface AnswerRequest {
 }
 
 export interface MarkSentRequest { jobKey: string }
+
+// POST /api/radio/find: turn a station's link (its stream, a .pls/.m3u playlist, or its "listen live" web page)
+// into a playable stream. 422 with { error } when no stream is found.
+export interface FindStationRequest { url: string }
+export interface FoundStation { name: string; url: string; cors: boolean }

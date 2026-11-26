@@ -1,6 +1,9 @@
 // The little counter radio, KDOX 87.9. Click it to open the dial.
+// The dial has the three built-in stations, live stations from public/records/stations.json, and the ones you add
+// with "Add a station" (paste a station's link; the server finds its stream). Those are kept in UI state.
 import { useEffect, useRef, useState } from "react";
-import type { UiState } from "../../contract/types";
+import type { FoundStation, LiveStation, UiState } from "../../contract/types";
+import { api } from "../api";
 import { RadioEngine, loadLiveStations, type Station } from "./radioEngine";
 
 type RadioState = UiState["radio"];
@@ -10,37 +13,85 @@ const STATIONS: { id: Station; label: string }[] = [
   { id: "rain", label: "Rain" },
 ];
 
-export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: RadioState) => void }) {
+/** Ask the radio to open its dial (the tour uses this). `add` also opens the Add a station form. */
+export const RADIO_EVENT = "gazette:radio";
+export type RadioEventDetail = { open: boolean; add?: boolean };
+
+const slug = (name: string) => name.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 32) || "station";
+
+interface Props {
+  radio: RadioState;
+  onChange: (r: RadioState) => void;
+  stations: LiveStation[];                       // added from the dial
+  onStationsChange: (s: LiveStation[], tuneTo?: RadioState) => void;
+}
+
+export function Radio({ radio, onChange, stations, onStationsChange }: Props) {
   const engine = useRef<RadioEngine | null>(null);
   const [open, setOpen] = useState(false);
   const [live, setLive] = useState(false); // audio actually playing (needs a click first)
   const wrap = useRef<HTMLDivElement>(null);
-  const [liveStations, setLiveStations] = useState<{ id: Station; label: string }[]>([]);
-  useEffect(() => { void loadLiveStations().then((ls) => setLiveStations(ls.map((s) => ({ id: `live:${s.id}` as Station, label: s.name })))); }, []);
-  const dial = [...STATIONS, ...liveStations];
+  const [fileStations, setFileStations] = useState<LiveStation[]>([]);
+  useEffect(() => { void loadLiveStations().then(setFileStations); }, []);
+  const added = useRef(stations);
+  added.current = stations;
+
+  const fileIds = new Set(fileStations.map((s) => s.id));
+  const dial: { id: Station; label: string; mine?: boolean }[] = [
+    ...STATIONS,
+    ...fileStations.map((s) => ({ id: `live:${s.id}` as Station, label: s.name })),
+    ...stations.filter((s) => !fileIds.has(s.id)).map((s) => ({ id: `live:${s.id}` as Station, label: s.name, mine: true })),
+  ];
 
   // Keep a running engine in sync with saved state; never start one from here.
   useEffect(() => {
     const e = engine.current;
     if (!e?.started) return;
-    if (radio.on) { void e.play(radio.station, radio.volume); setLive(true); }
+    if (radio.on) { void e.play(radio.station, radio.volume, added.current); setLive(true); }
     else { e.stop(); setLive(false); }
   }, [radio.on, radio.station, radio.volume]);
 
   useEffect(() => () => engine.current?.dispose(), []);
 
+  // Add a station: link -> found stream -> name it -> on the dial
+  const [adding, setAdding] = useState(false);
+  const [link, setLink] = useState("");
+  const [finding, setFinding] = useState(false);
+  const [found, setFound] = useState<FoundStation | null>(null);
+  const [name, setName] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
+  const linkRef = useRef<HTMLInputElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { if (found) nameRef.current?.focus({ preventScroll: true }); }, [found]);
+  const resetAdd = () => { setAdding(false); setLink(""); setFound(null); setName(""); setProblem(null); setFinding(false); };
+
+  useEffect(() => {
+    const onEvent = (ev: Event) => {
+      const d = (ev as CustomEvent<RadioEventDetail>).detail;
+      setOpen(d.open);
+      if (d.open && d.add) { setAdding(true); window.setTimeout(() => linkRef.current?.focus({ preventScroll: true }), 50); }
+      if (!d.open) resetAdd();
+    };
+    window.addEventListener(RADIO_EVENT, onEvent);
+    return () => window.removeEventListener(RADIO_EVENT, onEvent);
+  }, []);
+
   useEffect(() => {
     if (!open) return;
-    const close = (ev: PointerEvent) => { if (!wrap.current?.contains(ev.target as Node)) setOpen(false); };
-    const esc = (ev: KeyboardEvent) => { if (ev.key === "Escape") setOpen(false); };
+    const close = (ev: PointerEvent) => {
+      const t = ev.target as HTMLElement;
+      if (wrap.current?.contains(t) || t.closest?.(".gz-tour")) return;   // the tour's own buttons don't close it
+      setOpen(false); resetAdd();
+    };
+    const esc = (ev: KeyboardEvent) => { if (ev.key === "Escape" && !document.querySelector(".gz-tour")) { setOpen(false); resetAdd(); } };
     document.addEventListener("pointerdown", close);
     document.addEventListener("keydown", esc);
     return () => { document.removeEventListener("pointerdown", close); document.removeEventListener("keydown", esc); };
   }, [open]);
 
-  const start = (next: RadioState) => {
+  const start = (next: RadioState, list = added.current) => {
     engine.current ??= new RadioEngine();
-    void engine.current.play(next.station, next.volume);
+    void engine.current.play(next.station, next.volume, list);
     setLive(true);
   };
 
@@ -55,11 +106,47 @@ export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: Ra
     onChange(next);
   };
 
+  const find = async () => {
+    if (!link.trim() || finding) return;
+    setFinding(true); setProblem(null); setFound(null);
+    try {
+      const f = await api.findStation(link.trim());
+      setFound(f); setName(f.name);
+    } catch (e) {
+      setProblem((e as Error).message);
+    } finally {
+      setFinding(false);
+    }
+  };
+
+  const save = () => {
+    if (!found) return;
+    const label = name.trim().slice(0, 40) || found.name;
+    const taken = new Set([...stations.map((s) => s.id), ...fileStations.map((s) => s.id)]);
+    let id = slug(label), n = 2;
+    while (taken.has(id)) id = `${slug(label).slice(0, 29)}-${n++}`;
+    const list = [...stations, { id, name: label, url: found.url, cors: found.cors }];
+    const next: RadioState = { ...radio, station: `live:${id}`, on: true };
+    onStationsChange(list, next);
+    start(next, list);   // tune in straight away; this click counts as the gesture audio needs
+    resetAdd();
+  };
+
+  const remove = (id: Station) => {
+    const sid = id.slice(5);
+    const list = stations.filter((s) => s.id !== sid);
+    if (radio.station === id) {
+      const next: RadioState = { ...radio, station: "jazz" };
+      if (live) start(next, list);
+      onStationsChange(list, next);
+    } else onStationsChange(list);
+  };
+
   const status = live ? `On air: ${dial.find((s) => s.id === radio.station)?.label ?? "Jazz"}` : radio.on ? "Tap power to tune in" : "Off";
 
   return (
     <div className={`radio ${live ? "is-live" : ""}`} ref={wrap}>
-      <button type="button" className="radio-set" onClick={() => setOpen((o) => !o)}
+      <button type="button" className="radio-set" onClick={() => { setOpen((o) => !o); if (open) resetAdd(); }}
         aria-expanded={open} aria-label={`Radio KDOX 87.9 - ${status}. Open the dial`}>
         <svg viewBox="0 0 64 46" width="100%" aria-hidden="true">
           <path d="M44 12L56 2" stroke="#2a2620" strokeWidth="1.6" strokeLinecap="round" />
@@ -78,16 +165,20 @@ export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: Ra
         <span className="radio-notes" aria-hidden="true"><i>♪</i><i>♫</i><i>♪</i></span>
       </button>
       {open && (
-        <div className="radio-dial" role="group" aria-label="Radio controls">
+        <div className={`radio-dial${adding ? " is-adding" : ""}`} role="group" aria-label="Radio controls">
           <div className="radio-call">KDOX 87.9 <small>{status}</small></div>
           <button type="button" className={`radio-power ${live ? "on" : ""}`} onClick={power} aria-pressed={live}>
             {live ? "Switch off" : "Switch on"}
           </button>
           <div className="radio-stations" role="radiogroup" aria-label="Station">
             {dial.map((s) => (
-              <button key={s.id} type="button" role="radio" aria-checked={radio.station === s.id}
-                className={`${radio.station === s.id ? "sel" : ""}${s.id.startsWith("live:") ? " is-live-station" : ""}`}
-                onClick={() => tune(s.id)}>{s.label}</button>
+              <span key={s.id} className={`radio-st${s.id.startsWith("live:") ? " is-live-station" : ""}`}>
+                <button type="button" role="radio" aria-checked={radio.station === s.id}
+                  className={radio.station === s.id ? "sel" : ""} onClick={() => tune(s.id)}>{s.label}</button>
+                {s.mine && (
+                  <button type="button" className="radio-remove" onClick={() => remove(s.id)} aria-label={`Remove ${s.label} from the dial`} title="Remove">&times;</button>
+                )}
+              </span>
             ))}
           </div>
           <label className="radio-vol">
@@ -95,6 +186,38 @@ export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: Ra
             <input type="range" min={0} max={1} step={0.05} value={radio.volume}
               onChange={(e) => onChange({ ...radio, volume: Number(e.target.value) })} />
           </label>
+
+          {!adding ? (
+            <button type="button" className="radio-add" onClick={() => { setAdding(true); window.setTimeout(() => linkRef.current?.focus({ preventScroll: true }), 30); }}>
+              + Add a station
+            </button>
+          ) : (
+            <form className="radio-addform" onSubmit={(e) => { e.preventDefault(); if (found) save(); else void find(); }}>
+              {!found ? (
+                <>
+                  <label htmlFor="radio-link">Station link</label>
+                  <input id="radio-link" ref={linkRef} type="url" inputMode="url" placeholder="Paste its website or stream link"
+                    value={link} onChange={(e) => { setLink(e.target.value); setProblem(null); }} disabled={finding} />
+                  <p className="radio-hint">Its &ldquo;listen live&rdquo; page works. The Gazette finds the stream.</p>
+                  {problem && <p className="radio-problem" role="alert">{problem}</p>}
+                  <div className="radio-addrow">
+                    <button type="submit" disabled={!link.trim() || finding}>{finding ? "Tuning in…" : "Find it"}</button>
+                    <button type="button" onClick={resetAdd}>Cancel</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="radio-found" role="status">Found it. Name it for the dial:</p>
+                  <label htmlFor="radio-name" className="radio-sr">Station name</label>
+                  <input id="radio-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} ref={nameRef} />
+                  <div className="radio-addrow">
+                    <button type="submit" className="radio-save">Add &amp; play</button>
+                    <button type="button" onClick={() => setFound(null)}>Back</button>
+                  </div>
+                </>
+              )}
+            </form>
+          )}
         </div>
       )}
     </div>

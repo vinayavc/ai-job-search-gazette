@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { UiState } from "../../contract/types";
+import type { LiveStation, UiState } from "../../contract/types";
 import { atomicWrite, readText } from "./util";
 
 const STATIONS = ["jazz", "lofi", "rain"] as const;
@@ -8,7 +8,7 @@ const isStation = (v: unknown): v is UiState["radio"]["station"] =>
   typeof v === "string" && ((STATIONS as readonly string[]).includes(v) || LIVE.test(v));
 
 export function defaultState(): UiState {
-  return { circled: [], autoRank: true, dogName: "Doxie", circlesOpen: true, radio: { station: "jazz", volume: 0.4, on: false } };
+  return { circled: [], autoRank: true, dogName: "Doxie", circlesOpen: true, tourSeen: false, stations: [], radio: { station: "jazz", volume: 0.4, on: false } };
 }
 
 export function statePath(repoRoot: string): string {
@@ -18,6 +18,17 @@ export function statePath(repoRoot: string): string {
 export class StateError extends Error {}
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === "object" && !Array.isArray(v);
+
+const MAX_STATIONS = 24;
+function asStation(v: unknown): LiveStation | null {
+  if (!isObj(v)) return null;
+  const { id, name, url, cors } = v;
+  if (typeof id !== "string" || !/^[a-z0-9-]{1,40}$/.test(id)) return null;
+  if (typeof name !== "string" || !name.trim() || name.trim().length > 40) return null;
+  if (typeof url !== "string" || url.length > 2000 || !/^https?:\/\//i.test(url)) return null;
+  if (cors !== undefined && typeof cors !== "boolean") return null;
+  return { id, name: name.trim(), url, ...(cors === undefined ? {} : { cors }) };
+}
 
 /** Read the stored state; any missing or ill-typed value falls back to its default. */
 export function loadState(repoRoot: string): UiState {
@@ -31,6 +42,8 @@ export function loadState(repoRoot: string): UiState {
   if (typeof doc.autoRank === "boolean") s.autoRank = doc.autoRank;
   if (typeof doc.dogName === "string" && doc.dogName.trim()) s.dogName = doc.dogName.trim().slice(0, 24);
   if (typeof doc.circlesOpen === "boolean") s.circlesOpen = doc.circlesOpen;
+  if (typeof doc.tourSeen === "boolean") s.tourSeen = doc.tourSeen;
+  if (Array.isArray(doc.stations)) s.stations = doc.stations.map(asStation).filter((x): x is LiveStation => !!x).slice(0, MAX_STATIONS);
   if (isObj(doc.radio)) {
     const r = doc.radio;
     if (isStation(r.station)) s.radio.station = r.station;
@@ -61,6 +74,18 @@ export function mergeState(current: UiState, patch: unknown): UiState {
   if ("circlesOpen" in patch) {
     if (typeof patch.circlesOpen !== "boolean") throw new StateError("circlesOpen must be a boolean");
     next.circlesOpen = patch.circlesOpen;
+  }
+  if ("tourSeen" in patch) {
+    if (typeof patch.tourSeen !== "boolean") throw new StateError("tourSeen must be a boolean");
+    next.tourSeen = patch.tourSeen;
+  }
+  if ("stations" in patch) {
+    const list = patch.stations;
+    if (!Array.isArray(list) || list.length > MAX_STATIONS) throw new StateError(`stations must be a list of at most ${MAX_STATIONS}`);
+    const parsed = list.map(asStation);
+    if (parsed.some((x) => !x)) throw new StateError("each station needs an id (a-z, 0-9, -), a name (up to 40 characters) and an http(s) url");
+    const ids = new Set<string>();
+    next.stations = (parsed as LiveStation[]).filter((st) => !ids.has(st.id) && ids.add(st.id));
   }
   if ("radio" in patch) {
     const r = patch.radio;

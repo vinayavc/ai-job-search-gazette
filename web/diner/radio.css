@@ -50,3 +50,24 @@
 .radio-stations { flex-wrap: wrap; }
 .radio-stations button.is-live-station { flex: 1 0 100%; }
 .radio-stations button.is-live-station::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #c0392b; margin-right: 6px; vertical-align: 1px; }
+
+/* your own stations and "Add a station" */
+.radio-st { display: flex; gap: 3px; flex: 1; min-width: 0; }
+.radio-st.is-live-station { flex: 1 0 100%; }
+.radio-st > button[role="radio"] { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 2px; }
+.radio-st.is-live-station > button[role="radio"]::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #c0392b; margin-right: 6px; vertical-align: 1px; }
+.radio-stations button.is-live-station::before { content: none; }
+.radio-dial .radio-remove { flex: none; padding: 0 6px; background: transparent; border-style: dotted; }
+.radio-dial.is-adding { width: 232px; }
+.radio-dial .radio-add { background: transparent; border-style: dashed; }
+.radio-addform { display: grid; gap: 5px; border-top: 1px dashed var(--ink); padding-top: 7px; }
+.radio-addform label { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.radio-addform input { font: inherit; font-size: 12px; padding: 4px 6px; border: 1.5px solid var(--ink); border-radius: 3px; background: #fffaf0; color: var(--ink); min-width: 0; }
+.radio-addform input:focus-visible { outline: 2px solid var(--red); outline-offset: 1px; }
+.radio-hint { margin: 0; font-size: 11px; color: #6b6255; line-height: 1.3; }
+.radio-problem { margin: 0; font-size: 11px; color: #7a1f14; line-height: 1.35; }
+.radio-found { margin: 0; font-size: 12px; }
+.radio-addrow { display: flex; gap: 6px; }
+.radio-addrow button { flex: 1; }
+.radio-dial .radio-save { background: var(--red); color: var(--paper); }
+.radio-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

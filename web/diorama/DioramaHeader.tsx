@@ -34,12 +34,14 @@ export interface DioramaHeaderProps {
   onFetch: () => void;
   radio: UiState["radio"];
   onRadioChange: (r: UiState["radio"]) => void;
+  stations: UiState["stations"];
+  onStationsChange: (s: UiState["stations"], tuneTo?: UiState["radio"]) => void;
 }
 
 const IDLE_T = 11.25;   // the dog asleep, the flag showing your unsent drafts, before the door opens (11.3)
 const ACTIVE = new Set(["queued", "running", "waiting_input"]);
 
-export function DioramaHeader({ view, drafts, sentAt, onFetch, radio, onRadioChange }: DioramaHeaderProps) {
+export function DioramaHeader({ view, drafts, sentAt, onFetch, radio, onRadioChange, stations, onStationsChange }: DioramaHeaderProps) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const stage = useRef<Stage | null>(null);
   const clock = useRef({ st: IDLE_T, goal: IDLE_T, cutAt: 0, queue: [] as Seg[] });
@@ -147,7 +149,7 @@ export function DioramaHeader({ view, drafts, sentAt, onFetch, radio, onRadioCha
         <small>Menu</small>
         {busy && run?.command === "scrape" ? "Fetching the paper…" : "Fetch today's edition"}
       </button>
-      <div className="dio-radio"><Radio radio={radio} onChange={onRadioChange} /></div>
+      <div className="dio-radio"><Radio radio={radio} onChange={onRadioChange} stations={stations} onStationsChange={onStationsChange} /></div>
       {caption && (
         <div className="dio-caption" role="status" aria-live="polite">
           <b>{caption.tag}</b>

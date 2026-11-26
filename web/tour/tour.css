@@ -1,0 +1,51 @@
+/* The first-run tour: a newsprint card and a soft spotlight. The page underneath stays usable. */
+.gz-tour {
+  --gz-paper: #f3ead6; --gz-ink: #2a2620; --gz-ink-soft: #5b5347; --gz-marker: #c0392b; --gz-rule: #2a2620;
+  position: fixed; inset: 0; z-index: 900; pointer-events: none;
+  font-family: "Old Standard TT", Georgia, serif; color: var(--gz-ink);
+}
+.gz-tour-scrim { position: absolute; inset: 0; background: rgba(28, 24, 18, 0.55); pointer-events: auto; animation: gz-tour-in .25s ease both; }
+.gz-tour-spot {
+  position: absolute; border-radius: 10px; pointer-events: none;
+  box-shadow: 0 0 0 3px var(--gz-marker), 0 0 0 9999px rgba(28, 24, 18, 0.45);
+  transition: left .35s ease, top .35s ease, width .35s ease, height .35s ease;
+}
+.gz-tour-card {
+  position: absolute; pointer-events: auto; width: min(360px, calc(100vw - 32px));
+  right: 16px; bottom: 16px;   /* when there's nothing to point at */
+  background: var(--gz-paper); border: 2px solid var(--gz-ink); box-shadow: 4px 4px 0 var(--gz-ink);
+  padding: 14px 16px 12px; display: grid; gap: 8px;
+  animation: gz-tour-in .25s ease both;
+}
+.gz-tour.is-wide .gz-tour-card {
+  left: 50% !important; top: 50% !important; right: auto; bottom: auto; translate: -50% -50%;
+  width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 32px); overflow-y: auto;
+}
+.gz-tour-count { margin: 0; font-family: "Special Elite", monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--gz-marker); }
+.gz-tour-card h2 { margin: 0; font-size: 21px; line-height: 1.2; font-weight: 700; outline: none; }
+.gz-tour.is-wide .gz-tour-card h2 { font-family: "UnifrakturCook", "Old Standard TT", serif; font-size: 30px; font-weight: 700; }
+.gz-tour-body p { margin: 0 0 8px; font-size: 15.5px; line-height: 1.45; }
+.gz-tour-body p:last-child { margin-bottom: 0; }
+.gz-tour-body code { font-family: "Special Elite", monospace; font-size: 13px; background: rgba(42, 38, 32, 0.07); padding: 0 3px; }
+.gz-tour-video { aspect-ratio: 16 / 9.9; border: 1.5px solid var(--gz-ink); background: #9fb9c4; margin-top: 4px; }
+.gz-tour-video iframe { width: 100%; height: 100%; border: 0; display: block; }
+.gz-tour-dots { display: flex; gap: 5px; }
+.gz-tour-dots span { width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--gz-ink); }
+.gz-tour-dots span.seen { background: rgba(42, 38, 32, 0.35); }
+.gz-tour-dots span.on { background: var(--gz-marker); border-color: var(--gz-marker); }
+.gz-tour-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.gz-tour-skip { margin-left: auto; font-size: 14px; }
+.gz-tour-card .gz-btn:focus-visible, .gz-tour-card .gz-linkbtn:focus-visible { outline: 3px solid var(--gz-marker); outline-offset: 2px; }
+@keyframes gz-tour-in { from { opacity: 0; } to { opacity: 1; } }
+
+@media (max-width: 599px) {
+  /* a sheet along the bottom; the spotlight still shows what it means */
+  .gz-tour-card { left: 8px !important; right: 8px; top: auto !important; bottom: 8px; width: auto; }
+  .gz-tour.is-wide .gz-tour-card { left: 8px !important; top: auto !important; bottom: 8px; translate: none; width: auto; max-height: calc(100vh - 16px); }
+  .gz-tour.is-wide .gz-tour-card h2 { font-size: 24px; }
+  .gz-tour-video { aspect-ratio: 16 / 11.6; }   /* the player's controls wrap to two rows on a phone */
+}
+@media (prefers-reduced-motion: reduce) {
+  .gz-tour-spot { transition: none; }
+  .gz-tour-scrim, .gz-tour-card { animation: none; }
+}
