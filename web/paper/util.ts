@@ -116,3 +116,26 @@ export function balanceColumns<T>(items: T[], weight: (t: T) => number): [T[], T
 export function adWeight(j: Job): number {
   return 3 + Math.ceil(j.title.length / 28) + (j.strengths[0] ? 1.5 : 0) + (j.application ? 1 : 0);
 }
+
+export type TailorStatus = "todo" | "queued" | "typing" | "ready" | "sent" | "skip";
+
+/** Where a circled ad stands: still to tailor, waiting its turn, at the typewriter, pages ready, or already sent. */
+export function tailorState(j: Job, typingUrl: string | null, queue: string[]): TailorStatus {
+  if (typingUrl === j.url) return "typing";
+  if (queue.includes(j.url)) return "queued";
+  const app = j.application;
+  if (app && app.status !== "drafted") return "sent";
+  if (app?.docs.cvPdf || app?.docs.coverLetterPdf) return "ready";
+  if (j.vetoed) return "skip";
+  return "todo";
+}
+
+export const STATUS_WORDS: Record<TailorStatus, (dog: string) => string> = {
+  todo: () => "not tailored yet",
+  queued: () => "waiting its turn",
+  typing: (dog) => `${dog} is typing`,
+  ready: () => "pages ready to send",
+  sent: () => "sent",
+  skip: () => "not for you",
+};
+

@@ -6,6 +6,7 @@ style_src = ((d / 'part_head.js').read_text().replace('one day\'s mail run', 'on
 app = d.parent / 'web' / 'diorama'
 app.mkdir(exist_ok=True)
 (app / 'stage.js').write_text((d / 'stage.js').read_text())
+(app / 'sound.js').write_text((d / 'sound.js').read_text())   # the SOUND kit, for the explainer player
 (app / 'scene.js').write_text('// Built from ui/diorama-wip by build.py. Do not edit here.\n' + style_src + '\nexport {};\n')
 t = (d / 'storyboard.template.html').read_text()
 t = t.replace('/*__STAGE__*/', (d / 'stage.js').read_text()).replace('/*__STYLE__*/', (d / 'style.js').read_text())

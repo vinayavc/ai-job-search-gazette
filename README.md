@@ -37,6 +37,10 @@ GAZETTE_FAKE_AGENT=1 bun run dev
 
 Every command plays a short scripted run, including a question on the order pad.
 
+## How it works (the explainer)
+
+Open http://localhost:5174/explainer.html (or "How it works" at the top of the paper) for a 17-second explainer with sound. "Save MP4" on that page saves it as a video, rendered in your browser.
+
 ## Radio
 
 Off until you press it. With no files it plays a soft tune generated in the browser. To stock it with your own royalty-free music, see `public/records/README.md`.

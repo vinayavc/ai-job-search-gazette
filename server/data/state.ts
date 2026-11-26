@@ -5,7 +5,7 @@ import { atomicWrite, readText } from "./util";
 const STATIONS = ["jazz", "lofi", "rain"] as const;
 
 export function defaultState(): UiState {
-  return { circled: [], autoRank: true, dogName: "Doxie", radio: { station: "jazz", volume: 0.4, on: false } };
+  return { circled: [], autoRank: true, dogName: "Doxie", circlesOpen: true, radio: { station: "jazz", volume: 0.4, on: false } };
 }
 
 export function statePath(repoRoot: string): string {
@@ -27,6 +27,7 @@ export function loadState(repoRoot: string): UiState {
   if (Array.isArray(doc.circled)) s.circled = [...new Set(doc.circled.filter((x): x is string => typeof x === "string"))];
   if (typeof doc.autoRank === "boolean") s.autoRank = doc.autoRank;
   if (typeof doc.dogName === "string" && doc.dogName.trim()) s.dogName = doc.dogName.trim().slice(0, 24);
+  if (typeof doc.circlesOpen === "boolean") s.circlesOpen = doc.circlesOpen;
   if (isObj(doc.radio)) {
     const r = doc.radio;
     if (typeof r.station === "string" && (STATIONS as readonly string[]).includes(r.station)) s.radio.station = r.station as UiState["radio"]["station"];
@@ -53,6 +54,10 @@ export function mergeState(current: UiState, patch: unknown): UiState {
     const n = patch.dogName;
     if (typeof n !== "string" || !n.trim() || n.trim().length > 24) throw new StateError("dogName must be 1-24 characters");
     next.dogName = n.trim();
+  }
+  if ("circlesOpen" in patch) {
+    if (typeof patch.circlesOpen !== "boolean") throw new StateError("circlesOpen must be a boolean");
+    next.circlesOpen = patch.circlesOpen;
   }
   if ("radio" in patch) {
     const r = patch.radio;

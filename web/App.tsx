@@ -23,6 +23,10 @@ export function App() {
   const [view, setView] = useState<RunView>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [sentAt, setSentAt] = useState<number | null>(null);   // "Posted it?" answered yes -> the header plays the handover
+  // "Tailor" works through your circles one /apply at a time (the commands share state files).
+  const [queue, setQueue] = useState<string[]>([]);           // posting URLs still waiting for the typewriter
+  const queueRef = useRef<string[]>([]);
+  const setQ = useCallback((q: string[]) => { queueRef.current = q; setQueue(q); }, []);
   const unsub = useRef<null | (() => void)>(null);
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -48,10 +52,15 @@ export function App() {
         reload();
         if (e.run.command === "scrape" && e.run.status === "done" && stateRef.current?.autoRank) {
           api.startRun({ command: "rank" }).then(follow).catch((err) => setError(String(err.message)));
+        } else if (e.run.command === "apply") {
+          // carry on down the list unless you stopped it; a failed one doesn't hold up the rest
+          const [next, ...rest] = e.run.status === "cancelled" ? [] : queueRef.current;
+          setQ(next ? rest : []);
+          if (next) api.startRun({ command: "apply", args: next }).then(follow).catch((err) => { setQ([]); setError(String(err.message)); });
         }
       }
     });
-  }, [reload]);
+  }, [reload, setQ]);
 
   useEffect(() => {
     reload();
@@ -90,7 +99,15 @@ export function App() {
     api.answer(view.run.id, { questionId, answers }).catch((e) => setError(String(e.message)));
   }, [view.run, view.question]);
 
-  const cancel = useCallback(() => { if (view.run) api.cancel(view.run.id).catch(() => {}); }, [view.run]);
+  const tailorAll = useCallback((urls: string[]) => {
+    const [first, ...rest] = urls;
+    if (!first) return;
+    setError(null);
+    setQ(rest);
+    api.startRun({ command: "apply", args: first }).then(follow).catch((e) => { setQ([]); setError(String(e.message)); });
+  }, [follow, setQ]);
+
+  const cancel = useCallback(() => { setQ([]); if (view.run) api.cancel(view.run.id).catch(() => {}); }, [view.run, setQ]);
 
   return (
     <DogNameContext.Provider value={state?.dogName ?? "Doxie"}>
@@ -109,6 +126,8 @@ export function App() {
         state={state}
         view={view}
         onStart={start}
+        tailorQueue={queue}
+        onTailorAll={tailorAll}
         onCancel={cancel}
         onPatchState={patchState}
         onMarkSent={(jobKey) => api.markSent(jobKey).then(() => { setSentAt(Date.now()); return reload(); }).catch((e) => setError(String(e.message)))}

@@ -9,3 +9,6 @@ public/records/*
 diorama-wip/storyboard.html
 diorama-wip/test.html
 diorama-wip/style.js
+
+# rendered explainer videos (bun diorama-wip/render.mjs)
+media/

@@ -50,12 +50,11 @@ interface AdProps {
   inkIndex: number | null; // stagger index for fresh ads; null = no ink-in
   onToggle: () => void;
   onOpen: () => void;
-  onTailor?: () => void;         // shown on circled ads: tailor a CV and cover letter for this one
   fresh?: boolean;               // came in with this morning's paper
   registerRef?: (el: HTMLButtonElement | null) => void;
 }
 
-export function Ad({ job, circled, inkIndex, onToggle, onOpen, onTailor, fresh, registerRef }: AdProps) {
+export function Ad({ job, circled, inkIndex, onToggle, onOpen, fresh, registerRef }: AdProps) {
   const clickTimer = useRef<number | null>(null);
   const vetoed = job.vetoed;
 
@@ -118,11 +117,6 @@ export function Ad({ job, circled, inkIndex, onToggle, onOpen, onTailor, fresh, 
         <button type="button" className="gz-linkbtn gz-ad-read" onClick={onOpen} aria-label={`Read the ad: ${job.title} at ${job.company}`}>
           Read
         </button>
-        {circled && !vetoed && onTailor && (
-          <button type="button" className="gz-btn gz-btn-small gz-ad-tailor" onClick={onTailor} aria-label={`Tailor my resume for ${job.title} at ${job.company}`}>
-            Tailor my resume
-          </button>
-        )}
       </div>
       {circled && !vetoed && <MarkerCircle seed={job.key} />}
     </div>
@@ -208,12 +202,11 @@ interface PagesProps {
   inkIn: boolean;
   onToggle: (key: string) => void;
   onOpen: (key: string) => void;
-  onTailor: (job: Job) => void;
   registerRef: (key: string, el: HTMLButtonElement | null) => void;
   tail?: { label: string; node: ReactNode };   // an extra last page (letters to the editor)
 }
 
-export function ClassifiedPages({ jobs, freshKeys, circled, inkIn, onToggle, onOpen, onTailor, registerRef, tail }: PagesProps) {
+export function ClassifiedPages({ jobs, freshKeys, circled, inkIn, onToggle, onOpen, registerRef, tail }: PagesProps) {
   const area = useRef<HTMLDivElement>(null);
   const meas = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -264,7 +257,7 @@ export function ClassifiedPages({ jobs, freshKeys, circled, inkIn, onToggle, onO
   const renderAd = (j: Job, i: number) => (
     <Ad key={j.key} job={j} circled={circled.has(j.key)} fresh={freshKeys.has(j.key)}
       inkIndex={inkIn && page === 0 && freshKeys.has(j.key) ? i : null}
-      onToggle={() => onToggle(j.key)} onOpen={() => onOpen(j.key)} onTailor={() => onTailor(j)}
+      onToggle={() => onToggle(j.key)} onOpen={() => onOpen(j.key)}
       registerRef={(el) => registerRef(j.key, el)} />
   );
 
@@ -274,7 +267,7 @@ export function ClassifiedPages({ jobs, freshKeys, circled, inkIn, onToggle, onO
         onTouchStart={(e) => { swipe.current = e.touches[0].clientX; }}
         onTouchEnd={(e) => { const x0 = swipe.current; swipe.current = null; if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1); }}>
         <div className="gz-measure" ref={meas} aria-hidden="true" {...{ inert: "" }} style={{ width: colW }}>
-          {size.h > 0 && jobs.map((j) => <Ad key={j.key} job={j} circled={circled.has(j.key)} fresh={freshKeys.has(j.key)} inkIndex={null} onToggle={() => {}} onOpen={() => {}} onTailor={() => {}} />)}
+          {size.h > 0 && jobs.map((j) => <Ad key={j.key} job={j} circled={circled.has(j.key)} fresh={freshKeys.has(j.key)} inkIndex={null} onToggle={() => {}} onOpen={() => {}} />)}
         </div>
         {jobs.length === 0 && !tail ? (
           <div className="gz-empty"><DachshundPeek size={110} /><p>No ads yet. Send the mail van for today's paper.</p></div>

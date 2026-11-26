@@ -8,12 +8,13 @@ import { ClassifiedPages } from "./Classifieds";
 import { AdDetail } from "./AdDetail";
 import { Letters } from "./Letters";
 import { useDogName } from "./dogName";
-import { isActive, printableJobs, todayLine } from "./util";
+import { isActive, printableJobs, tailorState, todayLine, STATUS_WORDS } from "./util";
 import "./paper.css";
 
 export interface NewspaperProps {
   edition: Edition | null; state: UiState | null; view: RunView;
   onStart: (c: Command, args?: string) => void; onCancel: () => void;
+  tailorQueue: string[]; onTailorAll: (urls: string[]) => void;
   onPatchState: (p: Partial<UiState> | ((s: UiState) => Partial<UiState>)) => void; onMarkSent: (jobKey: string) => void;
 }
 
@@ -24,7 +25,7 @@ const PIPELINE = [
   { status: "offer", label: "offer" },
 ];
 
-export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkSent }: NewspaperProps) {
+export function Newspaper({ edition, state, view, onStart, tailorQueue, onTailorAll, onPatchState, onMarkSent }: NewspaperProps) {
   const dog = useDogName();
   const run = view.run;
   const active = isActive(run);
@@ -63,7 +64,11 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
     onPatchState((s) => ({ circled: s.circled.includes(key) ? s.circled.filter((k) => k !== key) : [...s.circled, key] }));
   }, [onPatchState]);
   const open = useCallback((key: string) => setOpenKey(key), []);
-  const tailor = useCallback((j: Job) => { setOpenKey(j.key); onStart("apply", j.url); }, [onStart]);
+  // One Tailor for every circled ad that doesn't have its pages yet; they go to the typewriter one by one.
+  const typingUrl = active && run?.command === "apply" ? run.args : null;
+  const tailorStatus = useCallback((j: Job) => tailorState(j, typingUrl, tailorQueue), [typingUrl, tailorQueue]);
+  const toTailor = circledJobs.filter((j) => tailorStatus(j) === "todo");
+  const circlesOpen = state?.circlesOpen ?? true;
 
   const apps = edition?.applications ?? [];
   const pipeline = PIPELINE.map((p) => ({ ...p, n: apps.filter((a) => a.status === p.status).length }));
@@ -81,7 +86,7 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
       <div className="gz-toprule">
         <span className="gz-hide-narrow">Vol. I, No. {edition?.editionNumber ?? 1}</span>
         <span>{todayLine()}</span>
-        <span className="gz-hide-narrow">Price: one belly rub</span>
+        <span><a className="gz-howto" href="/explainer.html">How it works</a><span className="gz-hide-narrow"> &middot; Price: one belly rub</span></span>
       </div>
       <header className="gz-masthead">
         <DachshundMasthead size={84} className="gz-masthead-dog" />
@@ -114,23 +119,54 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
             <h2 className="gz-headline gz-hide-narrow">{edition.profile.name ? `Good morning, ${edition.profile.name.split(" ")[0]}` : "Good morning"}</h2>
             <p className="gz-lede gz-hide-narrow">{editionLine}</p>
 
-            <h3 className="gz-side-head">Your circles{circledJobs.length ? ` (${circledJobs.length})` : ""}</h3>
-            {circledJobs.length === 0 ? (
-              <p className="gz-quiet">Circle an ad with the red marker and it'll wait for you here.</p>
-            ) : (
-              <ul className="gz-circles-list">
-                {circledJobs.map((j) => (
-                  <li key={j.key}>
-                    <button type="button" className="gz-linkbtn gz-circle-title" onClick={() => open(j.key)}>{j.title}</button>
-                    <span className="gz-quiet gz-circle-co">{j.company}</span>
-                    <span className="gz-circle-acts">
-                      <button type="button" className="gz-btn gz-btn-small" onClick={() => tailor(j)} disabled={active}>Tailor</button>
-                      <button type="button" className="gz-linkbtn gz-small" onClick={() => toggle(j.key)}>Uncircle</button>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
+            <section className="gz-circles" aria-labelledby="gz-circles-h">
+              <div className="gz-circles-bar">
+                <h3 className="gz-side-head" id="gz-circles-h">
+                  <button type="button" className="gz-fold" aria-expanded={circlesOpen} aria-controls="gz-circles-body"
+                    onClick={() => onPatchState((st) => ({ circlesOpen: !st.circlesOpen }))}>
+                    <span className="gz-fold-mark" aria-hidden="true">{circlesOpen ? "\u25BE" : "\u25B8"}</span>
+                    Your circles{circledJobs.length ? ` (${circledJobs.length})` : ""}
+                  </button>
+                </h3>
+                {toTailor.length > 0 && (
+                  <button type="button" className="gz-btn gz-btn-small gz-tailor-all" disabled={active}
+                    onClick={() => onTailorAll(toTailor.map((j) => j.url))}
+                    title={active ? `${dog} is busy with another errand` : undefined}>
+                    Tailor {toTailor.length === 1 ? "my circle" : `all ${toTailor.length} circles`}
+                  </button>
+                )}
+              </div>
+              {circlesOpen && (
+                <div id="gz-circles-body">
+                  {circledJobs.length === 0 ? (
+                    <p className="gz-quiet">Circle an ad with the red marker and it'll wait for you here.</p>
+                  ) : (
+                    <>
+                      <p className="gz-quiet gz-circles-note">
+                        {toTailor.length > 0
+                          ? `Tailor sends ${toTailor.length === 1 ? "it" : "them"} to ${dog}'s typewriter, one at a time. Open a job to read its pages and apply.`
+                          : tailorQueue.length > 0 || typingUrl ? `${dog} is working down the list.` : "Every circle has its pages. Open one to read them and apply."}
+                      </p>
+                      <ul className="gz-circles-list">
+                        {circledJobs.map((j) => {
+                          const st = tailorStatus(j);
+                          return (
+                            <li key={j.key} className={st === "typing" ? "is-typing" : undefined}>
+                              <button type="button" className="gz-linkbtn gz-circle-title" onClick={() => open(j.key)}>{j.title}</button>
+                              <span className="gz-quiet gz-circle-co">{j.company}</span>
+                              <span className="gz-circle-acts">
+                                <span className={`gz-circle-status is-${st}`}>{STATUS_WORDS[st](dog)}</span>
+                                <button type="button" className="gz-linkbtn gz-small" onClick={() => toggle(j.key)}>Uncircle</button>
+                              </span>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </>
+                  )}
+                </div>
+              )}
+            </section>
 
             <div className="gz-hide-narrow">
               <h3 className="gz-side-head">The pipeline</h3>
@@ -171,15 +207,16 @@ export function Newspaper({ edition, state, view, onStart, onPatchState, onMarkS
               </div>
             ) : openJob ? (
               <div className="gz-detail-scroll gz-pageturn" key={openJob.key}>
-                <AdDetail job={openJob} run={run} onBack={() => setOpenKey(null)} onStart={onStart} onMarkSent={onMarkSent} />
+                <AdDetail job={openJob} run={run} status={tailorStatus(openJob)} circled={circled.has(openJob.key)}
+                  onToggle={() => toggle(openJob.key)} onBack={() => setOpenKey(null)} onMarkSent={onMarkSent} />
               </div>
             ) : (
               <div className={`gz-body${unfolding ? " is-unfolding" : ""}`} onAnimationEnd={(e) => { if (e.target === e.currentTarget) setUnfolding(false); }}>
                 <h2 className="gz-section-head">Classifieds</h2>
-                <p className="gz-hint">Click an ad to circle it. Circled ads get a Tailor button.</p>
+                <p className="gz-hint">Click an ad to circle it. Tailor your circles from the sidebar.</p>
                 <ClassifiedPages
                   jobs={ordered} freshKeys={freshKeys} circled={circled} inkIn={inkIn}
-                  onToggle={toggle} onOpen={open} onTailor={tailor} registerRef={registerRef}
+                  onToggle={toggle} onOpen={open} registerRef={registerRef}
                   tail={apps.some((a) => !a.isFinal) ? { label: "Letters to the editor", node: <div className="gz-tailpage"><Letters applications={apps} busy={active} onStart={onStart} /></div> } : undefined}
                 />
               </div>

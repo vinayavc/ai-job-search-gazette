@@ -282,16 +282,17 @@ describe("state", () => {
     const r = await put({ circled: ["a", "a", "b"], radio: { on: true } });
     expect(r.status).toBe(200);
     const s = (await r.json()) as UiState;
-    expect(s).toEqual({ circled: ["a", "b"], autoRank: true, dogName: "Doxie", radio: { station: "jazz", volume: 0.4, on: true } });
+    expect(s).toEqual({ circled: ["a", "b"], autoRank: true, dogName: "Doxie", circlesOpen: true, radio: { station: "jazz", volume: 0.4, on: true } });
     expect(((await (await put({ dogName: "  Zoë " })).json()) as UiState).dogName).toBe("Zoë");
     expect((await put({ dogName: "" })).status).toBe(400);
     await put({ radio: { station: "rain" }, autoRank: false });
     const disk = JSON.parse(readFileSync(join(root, "ui/.state/state.json"), "utf8"));
-    expect(disk).toEqual({ circled: ["a", "b"], autoRank: false, dogName: "Zoë", radio: { station: "rain", volume: 0.4, on: true } });
+    expect(disk).toEqual({ circled: ["a", "b"], autoRank: false, dogName: "Zoë", circlesOpen: true, radio: { station: "rain", volume: 0.4, on: true } });
     expect(await (await call("GET /api/state")).json()).toEqual(disk);
   });
   test("validation", async () => {
     expect((await put({ autoRank: "yes" })).status).toBe(400);
+    expect((await put({ circlesOpen: "no" })).status).toBe(400);
     expect((await put({ radio: { station: "polka" } })).status).toBe(400);
     expect((await put({ radio: { volume: 2 } })).status).toBe(400);
     expect((await put({ circled: [1] })).status).toBe(400);

@@ -338,7 +338,7 @@
 .gz-ad { margin-bottom: 10px; }
 .gz-ad-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; position: relative; z-index: 1; }
 .gz-ad-read { margin-top: 0; }
-.gz-ad-tailor { padding: 2px 10px; font-size: 12px; }
+
 
 @media (max-width: 760px) {
   .gz-paper { padding: 8px 12px 8px; }
@@ -373,3 +373,35 @@
   .gz-pager { font-size: 13px; }
 }
 @media (max-width: 760px) { .gz-circles-list li { overflow: hidden; min-width: 0; } }
+
+/* your circles: folds away; one Tailor for the lot */
+.gz-circles-bar { border-top: 1px solid var(--gz-rule); margin-top: 16px; }
+.gz-circles-bar .gz-side-head { border-top: 0; margin: 0; padding-top: 6px; white-space: nowrap; }
+.gz-fold {
+  background: none; border: 0; padding: 2px 0; margin: 0; cursor: pointer; color: inherit;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; display: inline-flex; align-items: baseline; gap: 6px; text-align: left;
+}
+.gz-fold:hover { text-decoration: underline; text-underline-offset: 3px; }
+.gz-fold-mark { font-size: 11px; width: 10px; display: inline-block; }
+.gz-tailor-all { display: block; width: 100%; margin: 6px 0 2px; text-align: center; }
+#gz-circles-body { margin-top: 6px; }
+.gz-circles-note { font-size: 13px; margin: 0 0 8px; }
+.gz-circle-status { font-family: "Special Elite", monospace; font-size: 12px; color: var(--gz-ink-soft); }
+.gz-circle-status.is-ready { color: var(--gz-marker); }
+.gz-circle-status.is-typing { color: var(--gz-ink); }
+.gz-circles-list li.is-typing::before { background: var(--gz-marker); }
+
+/* the job's own page: tailored pages and the way to apply come first */
+.gz-ready { margin: 12px 0 6px; padding: 10px 12px 12px; border: 1px dashed var(--gz-rule); }
+.gz-ready.is-ready { border: 1.5px solid var(--gz-ink); }
+.gz-ready .gz-subhead { margin-top: 0; }
+.gz-ready .gz-pages { margin-top: 8px; }
+.gz-apply-row { align-items: center; margin-bottom: 0; }
+.gz-btn-primary { background: var(--gz-ink); color: #f3ead6; }
+.gz-btn-primary:hover:not(:disabled) { background: #3d372e; }
+@media (max-width: 760px) {
+  .gz-circles-bar { margin-top: 2px; border-top: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .gz-tailor-all { display: inline-block; width: auto; margin: 0; }
+  .gz-circles-note { display: none; }
+}
+.gz-howto { color: inherit; text-underline-offset: 3px; }

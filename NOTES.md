@@ -13,7 +13,9 @@ This folder is its own git repo (private `ai-job-search-gazette`). It sits insid
 - **The diorama is a header**, pinned at the top of the screen, not the whole app.
 - **One screen, no page scroll.** The town stays on top, "Your circles" stays fixed on the left, and the classifieds are measured pages you flip (buttons, arrow keys, swipe). Letters to the editor is the last page.
 - **You circle; the AI ranks.** `/rank` stamps fit scores. The dog never circles for you.
-- **"Tailor" only drafts.** "Tailor my resume" (on a circled ad, or in Your circles) runs `/apply`, which writes the CV and cover letter. You apply on the job site yourself. "Mail the application" opens the posting, and answering **"Posted it?" → Yes** marks it sent in the tracker.
+- **"Tailor" only drafts, and there is one Tailor button.** It sits at the top of Your circles and sends every circled ad that has no pages yet to `/apply`, one run at a time (the queue lives in `App.tsx`; a cancelled run stops the rest, a failed one doesn't). Ads and job pages have no Tailor buttons of their own; circling is how you pick.
+- **The job page leads with your pages.** Click a job in Your circles: the tailored resume and cover letter come first, then **"Apply on the job site"**, which opens the posting. You apply there yourself; answering **"Posted it?" → Yes** marks it sent in the tracker.
+- **Your circles folds away.** The open/closed state is `circlesOpen` in UI state. Each circle shows where it stands: not tailored yet, waiting its turn, being typed, pages ready, sent.
 - **The letterbox flag means drafts you haven't sent yet.** It's a quiet reminder, not a badge.
 - **Calm by design:** no alarm colours, no unread counts shouting.
 - **The radio lives in the page** (top right of the header), not in the scene. It's off until clicked, and plays generated jazz, lo-fi or rain, or your own files in `public/records/`.
@@ -31,12 +33,14 @@ This folder is its own git repo (private `ai-job-search-gazette`). It sits insid
 | `web/paper/` | The newspaper: `Newspaper`, paged `Classifieds` (`ClassifiedPages` measures ads and packs pages), `AdDetail`, `Letters`, `Notepad` (the order pad). |
 | `web/diorama/` | `DioramaHeader.tsx` plays story beats per stage; `stage.js` (rendering kit) and `scene.js` (the town) are **generated**, so don't edit them. |
 | `web/diner/` | Only the radio: `Radio.tsx`, `radioEngine.ts`, `radio.css`. |
+| `web/explainer.html`, `web/explainer/` | The 16:9 explainer player (`/explainer.html`, linked as "How it works"): play/pause, scrub, time, sound, loop, beat jumps, and "Save MP4". |
 | `diorama-wip/` | The diorama's source files and storyboard tooling. |
 
 ### Editing the diorama
 
 1. Edit the sources in `diorama-wip/`: `part_content.js` (stops, road, palette, the timing schedule `T`, beats and captions) and `part_story.js` (props, characters, choreography, sound score). `part_kit.js` is the reference "Tiny Diorama" kit, kept unchanged, and `stage.js` is the STAGE rendering kit, also unchanged.
 2. Run `python3 diorama-wip/build.py`. It regenerates `web/diorama/stage.js` and `web/diorama/scene.js` (plus the storyboard files, which are gitignored).
+   It also copies `diorama-wip/sound.js` (the SOUND kit) to `web/diorama/sound.js`.
 3. Keep `update(t)` a pure function of time: no `Math.random`, `Date` or timers (use `K.rng`).
 
 **App hooks:** the header drives the scene through `window.__gazetteApp`:
@@ -72,12 +76,22 @@ The copy needs `job_scraper/seen_jobs.json`, `job_search_tracker.csv`, `CLAUDE.m
 
 The Claude Code desktop app's browser pane throttles animation to about 1–2 fps. Judge motion in a real browser, where it runs at about 47 fps on an M1.
 
+## The explainer video
+
+`/explainer.html` plays the scene as the 17-second, six-beat explainer (storyboard: claude.ai artifact `ABy5fDiktTNoqCtjn9kMwK`). It renders one sample per frame while playing. The score is `sound(k)` in `part_story.js`, rendered once offline by `K.renderScore` in `diorama-wip/sound.js` (all synthesised and seeded, so it's the same every time).
+
+**MP4 without ffmpeg.** "Save MP4" renders every frame at the chosen sample count and encodes in the browser with WebCodecs (H.264 + AAC, falling back to Opus), muxed by `mp4-muxer`. To render from the command line with headless Chrome while `bun run dev` is running:
+
+```bash
+bun diorama-wip/render.mjs media/sausage-gazette-explainer.mp4 16
+```
+
+Samples: 1 takes about 15 s, 16 a few minutes, 72 (the style's own setting, softest motion blur) much longer. `media/` is gitignored.
+
 ## Open items
 
-- **The 16:9 explainer video isn't built yet.** The six-beat storyboard is approved (claude.ai artifact `ABy5fDiktTNoqCtjn9kMwK`). Still to build:
-  - a player page: 1920×1080 canvas, play/pause, scrub, time, sound toggle, loop
-  - the SOUND kit (not yet saved in the repo; the score is `sound(k)` in `part_story.js`)
-  - an MP4 render through headless Chrome and ffmpeg (ffmpeg isn't installed; ask before installing)
+- **The explainer's sound has only been checked by its levels** (peak about 0.75, nothing silent, no clipping), not by ear. The presets in `sound.js` are first drafts; tune them by listening.
+- **The tailor queue lives in the browser tab.** Reloading the page mid-queue finishes the current `/apply` but forgets the rest.
 - **The SENT beat's framing in the header** cuts off the office and its mail slot at the top right.
 - **Time of day doesn't follow the user's clock** in the idle scene (planned: morning light, dusk lamps, dog asleep at night).
 - **Never tested with real runs.** All testing so far was fake mode, with no real `/scrape`, `/rank` or `/apply`.
