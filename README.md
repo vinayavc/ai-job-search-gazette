@@ -10,6 +10,21 @@ See [NOTES.md](NOTES.md) for design decisions, how the diorama is built, and ope
 
 You need [ai-job-search](https://github.com/ai-job-search-dev/ai-job-search) cloned and working, and Claude Code signed in. The Gazette uses that same login, so there's nothing else to sign in to.
 
+### Where it goes
+
+The Gazette lives **inside your ai-job-search folder**, in a subfolder called `ui/`. That's how it finds your jobs, tracker and CVs. You don't clone it yourself: the installer below puts it in the right place.
+
+```text
+ai-job-search/                    ← the folder you already use with Claude Code
+├── CLAUDE.md                     your profile
+├── job_search_tracker.csv        your applications
+├── cv/  cover_letters/           your tailored pages
+├── .claude/commands/gazette.md   ← added by the installer: the /gazette command
+└── ui/                           ← the Sausage Gazette (this repo)
+```
+
+Both additions are ignored by ai-job-search's git on your machine, so they never show up in your commits or pull requests.
+
 ### The easy way: ask Claude
 
 Open Claude Code in your ai-job-search folder and say:
