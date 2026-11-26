@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# Start the Sausage Gazette and open it in your browser.
+#
+#   ui/gazette             start it (installs packages and builds the first time)
+#   ui/gazette --fake      scripted runs that spend no tokens and change no data
+#   ui/gazette --no-open   don't open a browser tab
+#   ui/gazette --stop      stop a Gazette that's running in the background
+#
+# Leave it running while you use the Gazette; Ctrl+C stops it.
+set -uo pipefail
+cd "$(dirname "$0")" || exit 1
+
+PORT="${GAZETTE_PORT:-4747}"
+URL="http://localhost:$PORT"
+FAKE=0
+OPEN=1; [ -n "${GAZETTE_NO_OPEN:-}" ] && OPEN=0
+PIDFILE=".state/gazette.pid"
+for arg in "$@"; do
+  case "$arg" in
+    --fake) FAKE=1 ;;
+    --no-open) OPEN=0 ;;
+    --stop)
+      if [ -f "$PIDFILE" ] && kill "$(cat "$PIDFILE")" 2>/dev/null; then echo "Stopped the Gazette."; else echo "The Gazette isn't running from here."; fi
+      exit 0 ;;
+    -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
+  esac
+done
+
+open_browser() {
+  [ "$OPEN" = 1 ] || return 0
+  if command -v open >/dev/null 2>&1; then open "$URL"
+  elif command -v xdg-open >/dev/null 2>&1; then xdg-open "$URL" >/dev/null 2>&1 &
+  fi
+}
+
+# Bun: use it from PATH, or from where its installer puts it.
+if ! command -v bun >/dev/null 2>&1; then
+  if [ -x "$HOME/.bun/bin/bun" ]; then export PATH="$HOME/.bun/bin:$PATH"
+  else
+    echo "The Gazette needs Bun (https://bun.sh). Install it with:" >&2
+    echo "  curl -fsSL https://bun.sh/install | bash" >&2
+    exit 1
+  fi
+fi
+
+# Already running? Just open it.
+if curl -fsS -m 2 "$URL/api/state" >/dev/null 2>&1; then
+  echo "The Gazette is already running at $URL"
+  open_browser
+  exit 0
+fi
+
+# Packages: first run, or after an update changed the lockfile.
+if [ ! -d node_modules ] || [ bun.lock -nt node_modules ]; then
+  echo "Installing packages..."
+  bun install --frozen-lockfile >/dev/null 2>&1 || bun install || exit 1
+  touch node_modules
+fi
+
+# Build the page: first run, or when anything it's built from has changed.
+if [ ! -f dist/index.html ] || [ -n "$(find web contract public package.json vite.config.ts -newer dist/index.html -print -quit 2>/dev/null)" ]; then
+  echo "Printing the first edition (building the page)..."
+  bun run build >/dev/null 2>&1 || { bun run build; exit 1; }
+fi
+
+if [ "$FAKE" = 1 ]; then export GAZETTE_FAKE_AGENT=1; echo "Fake mode: runs are scripted and spend no tokens."; fi
+GAZETTE_STATIC=1 bun server/index.ts &
+SERVER=$!
+mkdir -p .state && echo $$ > "$PIDFILE"
+trap 'kill "$SERVER" 2>/dev/null; wait "$SERVER" 2>/dev/null; rm -f "$PIDFILE"; exit 0' INT TERM
+trap 'rm -f "$PIDFILE"' EXIT
+
+for _ in $(seq 1 60); do
+  if ! kill -0 "$SERVER" 2>/dev/null; then wait "$SERVER"; exit $?; fi   # it stopped; its own message says why
+  if curl -fsS -m 1 "$URL/api/state" >/dev/null 2>&1; then
+    echo ""
+    echo "The Sausage Gazette is open at $URL"
+    echo "Leave this running while you use it. Ctrl+C stops it."
+    open_browser
+    wait "$SERVER"
+    exit $?
+  fi
+  sleep 0.5
+done
+echo "The Gazette didn't start within 30 seconds." >&2
+kill "$SERVER" 2>/dev/null
+exit 1

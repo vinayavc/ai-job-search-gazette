@@ -27,6 +27,7 @@ This folder is its own git repo (private `ai-job-search-gazette`). It sits insid
 
 | Area | What it does |
 |---|---|
+| `install.sh`, `gazette`, `claude/gazette.md` | One-step install and launch. `install.sh` (piped from GitHub) clones into `<job repo>/ui`, installs Bun if allowed, adds the `/gazette` Claude Code command and git-excludes both. `gazette` builds if needed, serves the built page on port 4747 and opens the browser; with no terminal attached (Claude ran it), the installer starts it in the background, and `gazette --stop` ends it. |
 | `contract/` | Shared types and the API between server and web. Change it first. |
 | `server/data/` | Reads jobs, tracker, docs and profile; UI state in `<job repo>/ui/.state/`; marks applications sent. |
 | `server/agent/` | Runs the repo's slash commands through the Claude Agent SDK; one run at a time; relays questions to the order pad. `GAZETTE_FAKE_AGENT=1` plays scripted runs. |
