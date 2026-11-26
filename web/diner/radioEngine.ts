@@ -1,6 +1,8 @@
 // KDOX 87.9 - the diner radio. Plays /records/playlist.json files when present,
-// otherwise synthesizes a quiet station with the Web Audio API. Never starts without a user click.
-export type Station = "jazz" | "lofi" | "rain";
+// otherwise synthesizes a quiet station with the Web Audio API. Live stations ("live:<id>") stream from the URLs
+// in /records/stations.json. Never starts without a user click.
+import type { LiveStation, RadioStation } from "../../contract/types";
+export type Station = RadioStation;
 interface Track { station: Station; file: string }
 
 const LOOKAHEAD = 0.35;
@@ -215,6 +217,43 @@ function records(ctx: AudioContext, dest: AudioNode, files: string[]): Program {
   return { out, stop: (at) => { stopped = true; finish(ctx, out, at, () => current?.el.pause()); } };
 }
 
+/** A live internet stream. Reconnects quietly if the stream drops. */
+function stream(ctx: AudioContext, dest: AudioNode, url: string): Program {
+  const out = makeOut(ctx, dest);
+  const el = new Audio();
+  el.crossOrigin = "anonymous";   // the stream must send CORS headers, or Web Audio would hear silence
+  el.preload = "none";
+  const g = ctx.createGain(); g.gain.value = 0.0001;
+  ctx.createMediaElementSource(el).connect(g).connect(out);
+  let stopped = false, retry = 0;
+  const connect = () => {
+    if (stopped) return;
+    el.src = url + (url.includes("?") ? "&" : "?") + "gz=" + Date.now();   // a fresh connection, never a stale cached chunk
+    el.play().then(() => {
+      retry = 0;
+      const t = ctx.currentTime;
+      g.gain.cancelScheduledValues(t); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.85, t + 2);
+    }).catch(() => again());
+  };
+  const again = () => { if (!stopped) window.setTimeout(connect, Math.min(30000, 2000 * 2 ** retry++)); };
+  el.addEventListener("error", again);
+  el.addEventListener("ended", again);
+  connect();
+  return { out, stop: (at) => { stopped = true; finish(ctx, out, at, () => { el.pause(); el.removeAttribute("src"); el.load(); }); } };
+}
+
+let stationsPromise: Promise<LiveStation[]> | null = null;
+/** Live stations from /records/stations.json (local, gitignored). Bad entries are skipped. */
+export function loadLiveStations(): Promise<LiveStation[]> {
+  stationsPromise ??= fetch("/records/stations.json")
+    .then((r) => (r.ok ? r.json() : []))
+    .then((j) => (Array.isArray(j) ? j.filter((s): s is LiveStation =>
+      !!s && typeof s.id === "string" && /^[a-z0-9-]{1,40}$/.test(s.id) && typeof s.name === "string" && s.name.trim() !== ""
+      && typeof s.url === "string" && /^https?:\/\//.test(s.url)) : []))
+    .catch(() => []);
+  return stationsPromise;
+}
+
 let playlistPromise: Promise<Track[]> | null = null;
 function loadPlaylist(): Promise<Track[]> {
   playlistPromise ??= fetch("/records/playlist.json")
@@ -246,12 +285,15 @@ export class RadioEngine {
     this.setVolume(volume);
     if (this.station === station && this.program) return;
     const token = ++this.token;
-    const tracks = (await loadPlaylist()).filter((t) => t.station === station).map((t) => t.file);
+    const live = station.startsWith("live:") ? (await loadLiveStations()).find((s) => `live:${s.id}` === station) : undefined;
+    const tracks = live ? [] : (await loadPlaylist()).filter((t) => t.station === station).map((t) => t.file);
     if (token !== this.token || !this.ctx || !this.master) return;
     this.program?.stop(this.ctx.currentTime);
     this.station = station;
     const ctx = this.ctx, dest = this.master;
-    this.program = tracks.length ? records(ctx, dest, tracks) : station === "jazz" ? jazz(ctx, dest) : station === "lofi" ? lofi(ctx, dest) : rain(ctx, dest);
+    // a live station that's no longer listed falls back to the jazz tune
+    this.program = live ? stream(ctx, dest, live.url) : tracks.length ? records(ctx, dest, tracks)
+      : station === "lofi" ? lofi(ctx, dest) : station === "rain" ? rain(ctx, dest) : jazz(ctx, dest);
   }
 
   setVolume(v: number) {

@@ -122,7 +122,7 @@ describe("runs API", () => {
     const gate = new Promise<void>((r) => (release = r));
     const { startRun, call, registry } = setup(
       scripted(async function* () {
-        yield tool("Bash", { command: "python3 tools/rank_state.py pending --token=abc" });
+        yield tool("Bash", { command: "python3 tools/rank_state.py pending --token=s3cr3tvalue" });
         await gate;
         yield { type: "assistant", parent_tool_use_id: null, message: { id: "t1", content: [{ type: "text", text: "All ranked." }] } };
         yield success("Ranked 3 postings.");
@@ -139,7 +139,7 @@ describe("runs API", () => {
     expect(events[0]).toMatchObject({ type: "status", run: { status: "queued" } });
     expect(events.map((e) => e.type)).toEqual(["status", "status", "progress", "log", "status", "done"]);
     expect(events).toContainEqual({ type: "progress", text: "Ranking desk is scoring postings" });
-    expect(JSON.stringify(events)).not.toContain("abc");
+    expect(JSON.stringify(events)).not.toContain("s3cr3tvalue");   // not "abc": random run ids can contain it
     const done = events.at(-1) as Extract<RunEvent, { type: "done" }>;
     expect(done.run).toMatchObject({ status: "done", summary: "Ranked 3 postings." });
     expect(comments).toBeGreaterThanOrEqual(2); // ": connected" + heartbeat

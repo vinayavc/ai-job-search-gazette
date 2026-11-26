@@ -3,6 +3,9 @@ import type { UiState } from "../../contract/types";
 import { atomicWrite, readText } from "./util";
 
 const STATIONS = ["jazz", "lofi", "rain"] as const;
+const LIVE = /^live:[a-z0-9-]{1,40}$/;
+const isStation = (v: unknown): v is UiState["radio"]["station"] =>
+  typeof v === "string" && ((STATIONS as readonly string[]).includes(v) || LIVE.test(v));
 
 export function defaultState(): UiState {
   return { circled: [], autoRank: true, dogName: "Doxie", circlesOpen: true, radio: { station: "jazz", volume: 0.4, on: false } };
@@ -30,7 +33,7 @@ export function loadState(repoRoot: string): UiState {
   if (typeof doc.circlesOpen === "boolean") s.circlesOpen = doc.circlesOpen;
   if (isObj(doc.radio)) {
     const r = doc.radio;
-    if (typeof r.station === "string" && (STATIONS as readonly string[]).includes(r.station)) s.radio.station = r.station as UiState["radio"]["station"];
+    if (isStation(r.station)) s.radio.station = r.station;
     if (typeof r.volume === "number" && Number.isFinite(r.volume)) s.radio.volume = Math.min(1, Math.max(0, r.volume));
     if (typeof r.on === "boolean") s.radio.on = r.on;
   }
@@ -63,8 +66,8 @@ export function mergeState(current: UiState, patch: unknown): UiState {
     const r = patch.radio;
     if (!isObj(r)) throw new StateError("radio must be an object");
     if ("station" in r) {
-      if (typeof r.station !== "string" || !(STATIONS as readonly string[]).includes(r.station)) throw new StateError(`radio.station must be one of ${STATIONS.join(", ")}`);
-      next.radio.station = r.station as UiState["radio"]["station"];
+      if (!isStation(r.station)) throw new StateError(`radio.station must be one of ${STATIONS.join(", ")}, or live:<id>`);
+      next.radio.station = r.station;
     }
     if ("volume" in r) {
       if (typeof r.volume !== "number" || !Number.isFinite(r.volume) || r.volume < 0 || r.volume > 1) throw new StateError("radio.volume must be a number from 0 to 1");

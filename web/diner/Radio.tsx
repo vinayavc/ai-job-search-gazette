@@ -1,7 +1,7 @@
 // The little counter radio, KDOX 87.9. Click it to open the dial.
 import { useEffect, useRef, useState } from "react";
 import type { UiState } from "../../contract/types";
-import { RadioEngine, type Station } from "./radioEngine";
+import { RadioEngine, loadLiveStations, type Station } from "./radioEngine";
 
 type RadioState = UiState["radio"];
 const STATIONS: { id: Station; label: string }[] = [
@@ -15,6 +15,9 @@ export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: Ra
   const [open, setOpen] = useState(false);
   const [live, setLive] = useState(false); // audio actually playing (needs a click first)
   const wrap = useRef<HTMLDivElement>(null);
+  const [liveStations, setLiveStations] = useState<{ id: Station; label: string }[]>([]);
+  useEffect(() => { void loadLiveStations().then((ls) => setLiveStations(ls.map((s) => ({ id: `live:${s.id}` as Station, label: s.name })))); }, []);
+  const dial = [...STATIONS, ...liveStations];
 
   // Keep a running engine in sync with saved state; never start one from here.
   useEffect(() => {
@@ -52,7 +55,7 @@ export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: Ra
     onChange(next);
   };
 
-  const status = live ? `On air: ${STATIONS.find((s) => s.id === radio.station)?.label}` : radio.on ? "Tap power to tune in" : "Off";
+  const status = live ? `On air: ${dial.find((s) => s.id === radio.station)?.label ?? "Jazz"}` : radio.on ? "Tap power to tune in" : "Off";
 
   return (
     <div className={`radio ${live ? "is-live" : ""}`} ref={wrap}>
@@ -81,9 +84,10 @@ export function Radio({ radio, onChange }: { radio: RadioState; onChange: (r: Ra
             {live ? "Switch off" : "Switch on"}
           </button>
           <div className="radio-stations" role="radiogroup" aria-label="Station">
-            {STATIONS.map((s) => (
+            {dial.map((s) => (
               <button key={s.id} type="button" role="radio" aria-checked={radio.station === s.id}
-                className={radio.station === s.id ? "sel" : ""} onClick={() => tune(s.id)}>{s.label}</button>
+                className={`${radio.station === s.id ? "sel" : ""}${s.id.startsWith("live:") ? " is-live-station" : ""}`}
+                onClick={() => tune(s.id)}>{s.label}</button>
             ))}
           </div>
           <label className="radio-vol">

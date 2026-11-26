@@ -91,7 +91,15 @@ export interface UiState {
   autoRank: boolean;          // run /rank after every /scrape (default true)
   dogName: string;            // what the dachshund is called in the UI (default "Doxie"), 1-24 characters
   circlesOpen: boolean;       // "Your circles" expanded in the sidebar (default true)
-  radio: { station: "jazz" | "lofi" | "rain"; volume: number; on: boolean };
+  radio: { station: RadioStation; volume: number; on: boolean };
+}
+
+// The built-in stations, or "live:<id>" for a live stream listed in public/records/stations.json (local, gitignored).
+export type RadioStation = "jazz" | "lofi" | "rain" | `live:${string}`;
+export interface LiveStation {
+  id: string;                 // lowercase letters, digits and dashes, up to 40
+  name: string;               // what the dial shows, e.g. "WAVE 98.3"
+  url: string;                // an http(s) audio stream (Icecast/Shoutcast MP3 or AAC)
 }
 
 // ---------- Agent runs ----------

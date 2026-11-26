@@ -18,7 +18,7 @@ This folder is its own git repo (private `ai-job-search-gazette`). It sits insid
 - **Your circles folds away.** The open/closed state is `circlesOpen` in UI state. Each circle shows where it stands: not tailored yet, waiting its turn, being typed, pages ready, sent.
 - **The letterbox flag means drafts you haven't sent yet.** It's a quiet reminder, not a badge.
 - **Calm by design:** no alarm colours, no unread counts shouting.
-- **The radio lives in the page** (top right of the header), not in the scene. It's off until clicked, and plays generated jazz, lo-fi or rain, or your own files in `public/records/`.
+- **The radio lives in the page** (top right of the header), not in the scene. It's off until clicked, and plays generated jazz, lo-fi or rain, or your own files in `public/records/`. Live internet stations come from `public/records/stations.json` (gitignored, so the owner's stations, such as WAVE 98.3, stay local); they show as a row under the built-in three, and the state stores them as `live:<id>`.
 - **The dog's name is a setting** (`dogName` in UI state, default "Doxie"). The owner's dog is Zoë; set it in the sidebar's "Your pup" field.
 - **Works for any ai-job-search user.** It reads only the repo's standard files (`job_scraper/seen_jobs.json`, `job_search_tracker.csv`, `cv/`, `cover_letters/`, `documents/applications/`, `CLAUDE.md`). Never `LATEST_SCRAPE.md` or `APPLY_LINKS.md`, which are personal additions in the owner's fork. Nothing personal is hard-coded.
 - **Never submit a form or send a message** on the user's behalf.

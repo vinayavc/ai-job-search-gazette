@@ -46,3 +46,7 @@
 .radio-vol { display: grid; gap: 2px; }
 .radio-vol input { width: 100%; accent-color: var(--red); }
 
+/* live stations get their own row under the built-in three, with a small on-air dot */
+.radio-stations { flex-wrap: wrap; }
+.radio-stations button.is-live-station { flex: 1 0 100%; }
+.radio-stations button.is-live-station::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #c0392b; margin-right: 6px; vertical-align: 1px; }
