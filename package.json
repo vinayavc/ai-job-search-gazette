@@ -1,6 +1,7 @@
 {
   "name": "sausage-gazette",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "bun run --parallel dev:server dev:web",

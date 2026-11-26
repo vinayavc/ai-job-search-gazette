@@ -53,3 +53,7 @@ bunx tsc --noEmit # typecheck
 ```
 
 `contract/` holds the shared types and API between `server/` and `web/`.
+
+## License
+
+MIT. See LICENSE.
